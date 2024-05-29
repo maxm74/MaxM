@@ -1,0 +1,57 @@
+object WorkProgress: TWorkProgress
+  Left = 662
+  Height = 54
+  Top = 302
+  Width = 250
+  BorderIcons = []
+  BorderStyle = bsNone
+  Caption = 'Wait Please...'
+  ClientHeight = 54
+  ClientWidth = 250
+  FormStyle = fsStayOnTop
+  Position = poMainFormCenter
+  ShowInTaskBar = stNever
+  LCLVersion = '1.5'
+  object Panel1: TPanel
+    Left = 0
+    Height = 54
+    Top = 0
+    Width = 250
+    Align = alClient
+    ClientHeight = 54
+    ClientWidth = 250
+    TabOrder = 0
+    object pBar: TProgressBar
+      Left = 1
+      Height = 20
+      Top = 33
+      Width = 248
+      Align = alBottom
+      TabOrder = 0
+    end
+    object lbTitle: TLabel
+      Left = 1
+      Height = 15
+      Top = 1
+      Width = 248
+      Align = alTop
+      Alignment = taCenter
+      Caption = 'Please Wait...'
+      Font.Height = -13
+      Font.Name = 'Sans'
+      Font.Style = [fsBold]
+      Layout = tlCenter
+      ParentColor = False
+      ParentFont = False
+    end
+    object lbCaption: TLabel
+      Left = 1
+      Height = 17
+      Top = 16
+      Width = 248
+      Align = alClient
+      Caption = 'lbCaption'
+      ParentColor = False
+    end
+  end
+end

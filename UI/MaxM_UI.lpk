@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <Name Value="MaxM_UI"/>
+    <Type Value="RunAndDesignTime"/>
+    <Author Value="MaxM"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <SearchPaths>
+        <OtherUnitFiles Value="."/>
+        <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+    </CompilerOptions>
+    <Description Value="MaxM Controls and Components for User Interface"/>
+    <Version Minor="2"/>
+    <Files Count="10">
+      <Item1>
+        <Filename Value="MM_UI_Highlighter.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="MM_UI_Highlighter"/>
+      </Item1>
+      <Item2>
+        <Filename Value="MM_UI_DBGrid.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="MM_UI_DBGrid"/>
+      </Item2>
+      <Item3>
+        <Filename Value="MM_UI_ComboBox.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="MM_UI_ComboBox"/>
+      </Item3>
+      <Item4>
+        <Filename Value="MM_UI_DBValuesComboBox.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="MM_UI_DBValuesComboBox"/>
+      </Item4>
+      <Item5>
+        <Filename Value="MM_UI_DBDateEdit.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="MM_UI_DBDateEdit"/>
+      </Item5>
+      <Item6>
+        <Filename Value="MM_UI_Consts.pas"/>
+        <UnitName Value="MM_UI_Consts"/>
+      </Item6>
+      <Item7>
+        <Filename Value="MM_UI_AutoComplete.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="MM_UI_AutoComplete"/>
+      </Item7>
+      <Item8>
+        <Filename Value="MM_UI_DBAutoComplete.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="MM_UI_DBAutoComplete"/>
+      </Item8>
+      <Item9>
+        <Filename Value="MM_UI_DBColorBox.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="MM_UI_DBColorBox"/>
+      </Item9>
+      <Item10>
+        <Filename Value="MM_UI_EnumFiles.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="MM_UI_EnumFiles"/>
+      </Item10>
+    </Files>
+    <CompatibilityMode Value="True"/>
+    <RequiredPkgs Count="3">
+      <Item1>
+        <PackageName Value="MaxM_Commons"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="LCL"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="FCL"/>
+      </Item3>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <CustomOptions Items="ExternHelp" Version="2">
+      <_ExternHelp Items="Count"/>
+    </CustomOptions>
+  </Package>
+</CONFIG>

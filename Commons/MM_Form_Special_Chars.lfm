@@ -1,0 +1,175 @@
+object FormSpecialChars: TFormSpecialChars
+  Left = 265
+  Height = 384
+  Top = 101
+  Width = 504
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsDialog
+  Caption = 'Caratteri Speciali...'
+  ClientHeight = 384
+  ClientWidth = 504
+  OnCreate = FormCreate
+  OnShow = FormShow
+  Position = poScreenCenter
+  LCLVersion = '1.7'
+  object sgChars: TStringGrid
+    Left = 0
+    Height = 240
+    Top = 32
+    Width = 416
+    AutoEdit = False
+    ColCount = 16
+    DefaultColWidth = 24
+    DefaultRowHeight = 24
+    ExtendedSelect = False
+    FixedCols = 0
+    FixedRows = 0
+    Flat = True
+    Font.Height = -19
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goSmoothScroll]
+    ParentFont = False
+    RowCount = 1
+    TabOrder = 0
+    TitleFont.Height = -19
+    OnSelection = sgCharsSelection
+    OnSelectCell = sgCharsSelectCell
+  end
+  object cbInsiemi: TComboBox
+    Left = 0
+    Height = 21
+    Top = 0
+    Width = 416
+    ItemHeight = 13
+    OnChange = cbInsiemiChange
+    Style = csDropDownList
+    TabOrder = 1
+  end
+  object lbCurChar: TLabel
+    Left = 424
+    Height = 77
+    Top = 33
+    Width = 37
+    Caption = 'X'
+    Font.Height = -64
+    ParentColor = False
+    ParentFont = False
+  end
+  object edHex: TLabeledEdit
+    Left = 424
+    Height = 21
+    Top = 200
+    Width = 80
+    EditLabel.AnchorSideLeft.Control = edHex
+    EditLabel.AnchorSideRight.Control = edHex
+    EditLabel.AnchorSideRight.Side = asrBottom
+    EditLabel.AnchorSideBottom.Control = edHex
+    EditLabel.Left = 424
+    EditLabel.Height = 13
+    EditLabel.Top = 184
+    EditLabel.Width = 80
+    EditLabel.Caption = 'Esadecimale :'
+    EditLabel.ParentColor = False
+    ReadOnly = True
+    TabOrder = 2
+  end
+  object edDec: TLabeledEdit
+    Left = 424
+    Height = 21
+    Top = 248
+    Width = 80
+    EditLabel.AnchorSideLeft.Control = edDec
+    EditLabel.AnchorSideRight.Control = edDec
+    EditLabel.AnchorSideRight.Side = asrBottom
+    EditLabel.AnchorSideBottom.Control = edDec
+    EditLabel.Left = 424
+    EditLabel.Height = 13
+    EditLabel.Top = 232
+    EditLabel.Width = 80
+    EditLabel.Caption = 'Decimale :'
+    EditLabel.ParentColor = False
+    ReadOnly = True
+    TabOrder = 3
+  end
+  object edText: TLabeledEdit
+    Left = 64
+    Height = 21
+    Top = 280
+    Width = 440
+    EditLabel.AnchorSideTop.Control = edText
+    EditLabel.AnchorSideTop.Side = asrCenter
+    EditLabel.AnchorSideRight.Control = edText
+    EditLabel.AnchorSideBottom.Control = edText
+    EditLabel.AnchorSideBottom.Side = asrBottom
+    EditLabel.Left = 11
+    EditLabel.Height = 13
+    EditLabel.Top = 284
+    EditLabel.Width = 50
+    EditLabel.Caption = 'Caratteri :'
+    EditLabel.ParentColor = False
+    LabelPosition = lpLeft
+    TabOrder = 4
+  end
+  object ButtonPanel1: TButtonPanel
+    Left = 6
+    Height = 34
+    Top = 344
+    Width = 492
+    OKButton.Name = 'OKButton'
+    OKButton.DefaultCaption = True
+    HelpButton.Name = 'HelpButton'
+    HelpButton.DefaultCaption = True
+    CloseButton.Name = 'CloseButton'
+    CloseButton.DefaultCaption = True
+    CancelButton.Name = 'CancelButton'
+    CancelButton.DefaultCaption = True
+    TabOrder = 5
+    ShowButtons = [pbOK, pbCancel]
+  end
+  object btInsert: TBitBtn
+    Left = 413
+    Height = 26
+    Top = 305
+    Width = 85
+    Anchors = [akTop, akRight]
+    AutoSize = True
+    Caption = '&Inserisci'
+    Glyph.Data = {
+      36040000424D3604000000000000360000002800000010000000100000000100
+      2000000000000004000064000000640000000000000000000000FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF001DAB56A008930EF732A333EF2791
+      2D7DFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF0080FFFF0210981FFE08930EFF149919FF1993
+      1FFBFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00008C01FF19A42AFF26B13FFF0A97
+      13FFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00028E04FF28B040FF35BE58FF0C9A
+      17FFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00049007FF2DB345FF35BD56FF0E9C
+      1CFFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF000080
+      006A008300FA008700FF008B00FF028F05FF05920BFF2EB143FF34B74EFF119F
+      20FF15A428FF19A82FFF1DAD37FF22B340FA26B74B6AFFFFFF00FFFFFF000082
+      00EC42A746FF46AD4AFF49B54FFF55BC5DFF56BE62FF47BB57FF47BD5AFF59C3
+      6AFF4FBD60FF2CAA39FF23A12AFF30A73BFF2ABB4FECFFFFFF00FFFFFF000486
+      04EC63BA68FF60BD68FF5EC067FF5FC268FF61C56DFF53C363FF54C465FF64C8
+      75FF68CA77FF74CA7EFF65BF6BFF53B55DFF31C058ECFFFFFF00FFFFFF0062B6
+      628841A841FB048F06FF08920CFF0B9612FF0D9917FF6BCC79FF6CCD7BFF1BA9
+      30FF1EAD37FF23B240FF28B849FF61CD7CFB80DB9A88FFFFFF00FFFFFF00FFFF
+      FF01FFFFFF04FFFFFF00FFFFFF00FFFFFF000E9C1BFF73D183FF74D184FF20AC
+      37FFFFFFFF00FFFFFF00FFFFFF00FFFFFF04FFFFFF01FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00109F1FFF7CD791FF7ED992FF23B0
+      3CFFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF0013A124FF86DE9EFF8ADFA1FF26B3
+      42FFFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF0048B857FE8ED9A0FF86D69AFF52C3
+      6BFBFFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF0070C97CA428B140F727B443ED90D9
+      A195FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
+      FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00
+    }
+    OnClick = btInsertClick
+    TabOrder = 6
+  end
+end
