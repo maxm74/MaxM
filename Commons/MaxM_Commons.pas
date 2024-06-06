@@ -10,14 +10,8 @@ interface
 uses
   MM_IniFiles, MM_StrUtils, MM_VCL_Compatibility, MM_DB_FirebirdUtils, MM_VariantsStringList, MM_DB_Utils, 
   MM_Form_WorkProgress, MM_AsyncCall, MM_StringListList, MM_Form_DatasetDiff, MM_FilesUtils, MM_GeometricalUtils, 
-  MM_Form_Special_Chars, MM_Special_Chars, MM_Form_CharsGrid, LazarusPackageIntf;
+  MM_Form_Special_Chars, MM_Special_Chars, MM_Form_CharsGrid, MM_SyncIPC;
 
 implementation
 
-procedure Register;
-begin
-end;
-
-initialization
-  RegisterPackage('MaxM_Commons', @Register);
 end.

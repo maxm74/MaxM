@@ -2,7 +2,6 @@
 <CONFIG>
   <Package Version="5">
     <Name Value="MaxM_Commons"/>
-    <Type Value="RunAndDesignTime"/>
     <Author Value="MaxM"/>
     <CompilerOptions>
       <Version Value="11"/>
@@ -13,7 +12,7 @@
     </CompilerOptions>
     <Description Value="MaxM Common Units and Forms"/>
     <Version Minor="2"/>
-    <Files Count="15">
+    <Files Count="16">
       <Item1>
         <Filename Value="MM_IniFiles.pas"/>
         <UnitName Value="MM_IniFiles"/>
@@ -74,6 +73,10 @@
         <Filename Value="MM_Form_CharsGrid.pas"/>
         <UnitName Value="MM_Form_CharsGrid"/>
       </Item15>
+      <Item16>
+        <Filename Value="MM_SyncIPC.pas"/>
+        <UnitName Value="MM_SyncIPC"/>
+      </Item16>
     </Files>
     <CompatibilityMode Value="True"/>
     <RequiredPkgs Count="4">
