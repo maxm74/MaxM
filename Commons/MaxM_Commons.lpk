@@ -12,7 +12,7 @@
     </CompilerOptions>
     <Description Value="MaxM Common Units and Forms"/>
     <Version Minor="2"/>
-    <Files Count="16">
+    <Files Count="17">
       <Item1>
         <Filename Value="MM_IniFiles.pas"/>
         <UnitName Value="MM_IniFiles"/>
@@ -77,6 +77,10 @@
         <Filename Value="MM_SyncIPC.pas"/>
         <UnitName Value="MM_SyncIPC"/>
       </Item16>
+      <Item17>
+        <Filename Value="MM_OpenArrayList.pas"/>
+        <UnitName Value="MM_OpenArrayList"/>
+      </Item17>
     </Files>
     <CompatibilityMode Value="True"/>
     <RequiredPkgs Count="4">
