@@ -74,8 +74,8 @@
         <UnitName Value="MM_Form_CharsGrid"/>
       </Item15>
       <Item16>
-        <Filename Value="MM_SyncIPC.pas"/>
-        <UnitName Value="MM_SyncIPC"/>
+        <Filename Value="syncipc.pp"/>
+        <UnitName Value="syncipc"/>
       </Item16>
       <Item17>
         <Filename Value="MM_OpenArrayList.pas"/>
