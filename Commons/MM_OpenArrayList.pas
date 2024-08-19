@@ -11,19 +11,19 @@ type
 
   { TOpenArrayList }
 
-  generic TOpenArrayList<T> = class(TNoRefCountObject)
+  generic TOpenArrayList<T, K> = class(TNoRefCountObject)
   type
     TInfo = record
-      Name: String;
+      Key: K;
       Data: T;
     end;
    PData = ^T;
   protected
     rList: array of TInfo;
 
-    function Get(const aName: String) : PData; overload;
+    function Get(const aKey: K) : PData; overload;
     function Get(Index: Integer) : PData; overload;
-    function GetName(Index: Integer) : String;
+    function GetKey(Index: Integer) : K;
     function GetCount: Integer;
 
     function FreeElement(var aData: T): Boolean; virtual;
@@ -33,19 +33,19 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Add(const aName: String; const aData: T): Integer;
-    function Del(const aName: String): Boolean; overload;
+    function Add(const aKey: K; const aData: T): Integer;
+    function Del(const aKey: K): Boolean; overload;
     function Del(const aData: T): Boolean; overload;
     function Del(const aIndex: Integer): Boolean; overload;
 
-    function FindByName(const aName: String): Integer;
+    function FindByKey(const aKey: K): Integer;
     function Find(const aData: T): Integer;
 
     property Count: Integer read GetCount;
 
-    property DataByName [const aName: String]: PData read Get;
+    property DataByKey [const aKey: K]: PData read Get;
     property Data [const aIndex: Integer]: PData read Get;
-    property Name [const aIndex: Integer]: String read GetName;
+    property Key [const aIndex: Integer]: K read GetKey;
   end;
 
 
@@ -54,14 +54,14 @@ implementation
 
 { TOpenArrayList }
 
-function TOpenArrayList.Get(const aName: String): PData;
+function TOpenArrayList.Get(const aKey: K): PData;
 var
    r : Integer;
 
 begin
   Result:= Nil;
 
-  r:= FindByName(aName);
+  r:= FindByKey(aKey);
   if (r > -1)
   then Result:= @rList[r].Data;
 end;
@@ -73,10 +73,10 @@ begin
   else Result:= Nil;
 end;
 
-function TOpenArrayList.GetName(Index: Integer): String;
+function TOpenArrayList.GetKey(Index: Integer): K;
 begin
   if (Index >= 0) and (Index < Length(rList))
-  then Result:= rList[Index].Name
+  then Result:= rList[Index].Key
   else Result:= '';
 end;
 
@@ -124,28 +124,28 @@ begin
   inherited Destroy;
 end;
 
-function TOpenArrayList.Add(const aName: String; const aData: T): Integer;
+function TOpenArrayList.Add(const aKey: K; const aData: T): Integer;
 begin
-  Result:= FindByName(aName);
+  Result:= FindByKey(aKey);
 
   if (Result = -1) then
   begin
     Result:= Length(rList);
     SetLength(rList, Result+1);
 
-    rList[Result].Name:= aName;
+    rList[Result].Key:= aKey;
     rList[Result].Data:= aData;
   end;
 end;
 
-function TOpenArrayList.Del(const aName: String): Boolean;
+function TOpenArrayList.Del(const aKey: K): Boolean;
 var
    r : Integer;
 
 begin
   Result:= False;
 
-  r:= FindByName(aName);
+  r:= FindByKey(aKey);
   if (r > -1) then
   begin
     Result:= FreeElement(rList[r].Data);
@@ -184,14 +184,14 @@ begin
   end;
 end;
 
-function TOpenArrayList.FindByName(const aName: String): Integer;
+function TOpenArrayList.FindByKey(const aKey: K): Integer;
 var
   i: Integer;
 
 begin
   Result:= -1;
   for i:=0 to Length(rList)-1 do
-    if (rList[i].Name = aName) then
+    if (rList[i].Key = aKey) then
     begin
       Result:= i; break;
     end;
