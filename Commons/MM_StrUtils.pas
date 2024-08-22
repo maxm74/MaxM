@@ -30,6 +30,8 @@ procedure GetPascalConst(const Line :String; var ConstName, ConstValue :String);
 procedure ExplodeStrArray(const s: String; const Delimiter:Char; var _array: TStringArray);
 function ImplodeStrArray(const Delimiter:Char; const _array: TStringArray): String;
 
+procedure VersionStrToInt(const s: String; var Ver, VerSub: Integer);
+
 implementation
 
 uses SysUtils;
@@ -297,6 +299,29 @@ begin
           if (_array[iStr] <> '')
           then Result :=Result+_array[iStr];
       end;
+end;
+
+procedure VersionStrToInt(const s: String; var Ver, VerSub: Integer);
+var
+   pPos, ppPos: Integer;
+
+begin
+  Ver:= 0;
+  VerSub:= 0;
+
+  try
+     pPos:= Pos('.', s);
+     if (pPos > 0) then
+     begin
+       Ver:= StrToInt(Copy(s, 0, pPos-1));
+       ppPos:= Pos('.', s, pPos+1);
+       if (ppPos > 0)
+       then VerSub:= StrToInt(Copy(s, pPos+1, ppPos-1))
+       else VerSub:= StrToInt(Copy(s, pPos+1, 255));
+     end;
+  except
+
+  end;
 end;
 
 end.
