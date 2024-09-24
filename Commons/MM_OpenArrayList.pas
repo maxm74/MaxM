@@ -18,6 +18,7 @@ type
       Data: T;
     end;
    PData = ^T;
+
   protected
     rList: array of TInfo;
 
@@ -33,10 +34,16 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Add(const aKey: K; const aData: T): Integer;
+    function Add(const aKey: K; const aData: T): Integer; overload;
+    function Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; overload;
+
+    function CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean;
+
     function Del(const aKey: K): Boolean; overload;
     function Del(const aData: T): Boolean; overload;
     function Del(const aIndex: Integer): Boolean; overload;
+
+    function Clear: Boolean;
 
     function FindByKey(const aKey: K): Integer;
     function Find(const aData: T): Integer;
@@ -48,6 +55,13 @@ type
     property Key [const aIndex: Integer]: K read GetKey;
   end;
 
+  generic IOpenArrayList<T, K> = interface
+    function Get_Index(const AIndex: DWord; out aData: T): Boolean; stdcall;
+    function Get_ID(const aKey: K; out aData: T): Boolean; stdcall;
+    function Set_Index(const AIndex: DWord; var aData: T): Boolean; stdcall;
+    function Set_ID(const aKey: K; var aData: T): Boolean; stdcall;
+    function CopyFrom(const ACount: DWord; const AArray: array of T): Boolean; stdcall;
+  end;
 
 
 implementation
@@ -77,7 +91,7 @@ function TOpenArrayList.GetKey(Index: Integer): K;
 begin
   if (Index >= 0) and (Index < Length(rList))
   then Result:= rList[Index].Key
-  else Result:= '';
+  else Result:= Default(K);
 end;
 
 function TOpenArrayList.GetCount: Integer;
@@ -103,23 +117,8 @@ begin
 end;
 
 destructor TOpenArrayList.Destroy;
-var
-   i: Integer;
-
 begin
-  for i:=0 to Length(rList)-1 do
-  begin
-    try
-       FreeElement(rList[i].Data);
-
-    except
-    end;
-  end;
-
-  try
-     rList:= Nil;
-  except
-  end;
+  Clear;
 
   inherited Destroy;
 end;
@@ -136,6 +135,30 @@ begin
     rList[Result].Key:= aKey;
     rList[Result].Data:= aData;
   end;
+end;
+
+function TOpenArrayList.Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean;
+var
+   i: Integer;
+
+begin
+  Result:= True;
+
+  for i:=Low(AKeyArray) to High(AKeyArray) do
+  try
+     Result:= (Add(AKeyArray[i], ADataArray[i]) >= 0);
+     if (Result = False)
+     then break;
+  except
+      Result:= False;
+      break;
+  end;
+end;
+
+function TOpenArrayList.CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean;
+begin
+  Clear;
+  Add(ACount, AKeyArray, ADataArray);
 end;
 
 function TOpenArrayList.Del(const aKey: K): Boolean;
@@ -181,6 +204,30 @@ begin
 
     Delete(rList, aIndex, 1);
     Result:= True;
+  end;
+end;
+
+function TOpenArrayList.Clear: Boolean;
+var
+   i: Integer;
+
+begin
+  Result:= True;
+
+  for i:=0 to Length(rList)-1 do
+  begin
+    try
+       FreeElement(rList[i].Data);
+
+    except
+      Result:= False;
+    end;
+  end;
+
+  try
+     rList:= Nil;
+  except
+    Result:= False;
   end;
 end;
 
