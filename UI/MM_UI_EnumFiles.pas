@@ -22,11 +22,12 @@ type
      rSorted: TMM_UI_EnumFilesSorting;
      rMenuItem,
      rSelectedItem: TMenuItem;
-     ProgramPath,
+     rBasePath,
      //BaseDir,
      rSelectedPath,
      rEnumFilter,
      rDefaultItem: String;
+     rABSBasePaths,
      rBasePaths: TStringList;
      rEnumAttr,
      rImageIndex_Dir,
@@ -42,6 +43,7 @@ type
 
      procedure SetSorted(AValue: TMM_UI_EnumFilesSorting);
      procedure SetMenuItem(Value: TMenuItem); virtual;
+     procedure SetBasePath(Value: String); virtual;
      procedure SetBasePaths(Value: TStringList); virtual;
      procedure Loaded; override;
      procedure UpdateMenuItem(theItem: TMenuItem; DefaultClick: Boolean); virtual;
@@ -61,6 +63,7 @@ type
      property SelectedPath: String read rSelectedPath;
   published
      property MenuItem: TMenuItem read rMenuItem write SetMenuItem;
+     property BasePath: String read rBasePath write SetBasePath;
      property BasePaths: TStringList read rBasePaths write SetBasePaths;
      property EnumFilter: String read rEnumFilter write SetEnumFilter;
      property DefaultItem: String read rDefaultItem write rDefaultItem;
@@ -97,7 +100,7 @@ begin
      rMenuItem :=Nil;
      rSelectedItem :=Nil;
      rBasePaths :=TStringList.Create;
-     ProgramPath :=ExtractFilePath(ParamStr(0));
+     rABSBasePaths:= TStringList.Create;
      rBasePaths.Add('.');
      rEnumFilter :='*.*';
      rEnumAttr :=faAnyFile;
@@ -105,13 +108,15 @@ begin
      rUpdateMenuAfterLoaded :=True;
      rImageIndex_Dir :=-1;
      rImageIndex_File :=-1;
-     if (ProgramPath[Length(ProgramPath)] in AllowDirectorySeparators)
-     then SetLength(ProgramPath, Length(ProgramPath)-1);
+     rBasePath:= '';
 end;
 
 destructor TMM_UI_EnumFilesINMenuItem.Destroy;
 begin
-     inherited Destroy;
+  rABSBasePaths.Free;
+  rBasePaths.Free;
+
+  inherited Destroy;
 end;
 
 procedure TMM_UI_EnumFilesINMenuItem.ItemClick(Sender: TObject);
@@ -122,6 +127,7 @@ begin
 
      if rCheckedStyle then
      begin
+          //Avoid bugs on old fpc versions (solved by Me)
           if (rSelectedItem<>Nil)
           then rSelectedItem.Checked :=False;
 
@@ -147,18 +153,29 @@ Var
    currValue :String;
 
 begin
+     if (rBasePath = '')
+     then rBasePath:= ExtractFilePath(ParamStr(0));
+
+     if (rBasePath[Length(rBasePath)] in AllowDirectorySeparators)
+     then SetLength(rBasePath, Length(rBasePath)-1);
+
+     rABSBasePaths.Clear;
+
      for index :=0 to rBasePaths.Count-1 do
      begin
           currValue :=rBasePaths.Strings[index];
 
-          //Convert Paths to Current System
-          DoDirSeparators(currValue);
-
           if (currValue<>'') then
           begin
+               //Convert Paths to Current System
+               DoDirSeparators(currValue);
+
+               currValue:= ExpandFileName(currValue, rBasePath);
+
                if (currValue[Length(currValue)] in AllowDirectorySeparators)
                then SetLength(currValue, Length(currValue)-1);
 
+               (*
                if (currValue[1]='.') then
                begin
                     Delete(currValue, 1, 1);
@@ -167,12 +184,29 @@ begin
                          if (currValue[1] in AllowDirectorySeparators)
                          then Delete(currValue, 1, 1);
 
-                         currValue :=ProgramPath+DirectorySeparator+currValue;
+                         currValue :=rBasePath+DirectorySeparator+currValue;
                     end;
                 end;
+                rBasePaths.Strings[index] :=currValue;
+               *)
+
+               rABSBasePaths.Add(currValue);
            end;
-          rBasePaths.Strings[index] :=currValue;
       end;
+end;
+
+procedure TMM_UI_EnumFilesINMenuItem.SetBasePath(Value: String);
+begin
+  if (rBasePath <> Value) then
+  begin
+    rBasePath:= Value;
+    if not(csDesigning in ComponentState) and
+       not(csLoading in ComponentState)
+    then begin
+              BuildABSPaths;
+              UpdateMenuItem(rMenuItem, True);
+          end;
+  end;
 end;
 
 procedure TMM_UI_EnumFilesINMenuItem.SetBasePaths(Value: TStringList);
@@ -536,8 +570,13 @@ Var
                   newItem.Hint :=String(xItems_Files.Values[i]);
                   xItem.Add(newItem);
 
-                  if isDefault and DefaultClick and Assigned(rOnItemClick)
-                  then rOnItemClick(Self, newItem, newItem.Hint);
+                  if isDefault then
+                  begin
+                    rSelectedPath :=newItem.Hint;
+
+                    if DefaultClick and Assigned(rOnItemClick)
+                    then rOnItemClick(Self, newItem, newItem.Hint);
+                  end;
              end;
 
           finally
@@ -558,10 +597,10 @@ begin
           rSelectedPath :='';
           index :=0;
 
-          for baseindex :=0 to rBasePaths.Count-1 do
+          for baseindex :=0 to rABSBasePaths.Count-1 do
           begin
-               if (rBasePaths.Strings[baseindex] <> '')
-               then SearchOnPath(rMenuItem, rBasePaths.Strings[baseindex]);
+               if (rABSBasePaths.Strings[baseindex] <> '')
+               then SearchOnPath(rMenuItem, rABSBasePaths.Strings[baseindex]);
            end;
 
           if Assigned(rOnUpdateDone)
