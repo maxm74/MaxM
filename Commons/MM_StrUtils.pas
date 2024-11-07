@@ -16,6 +16,8 @@ unit MM_StrUtils;
 
 interface
 
+uses Classes, TypInfo;
+
 type
    TStringArray = array of string;
 
@@ -31,6 +33,9 @@ procedure ExplodeStrArray(const s: String; const Delimiter:Char; var _array: TSt
 function ImplodeStrArray(const Delimiter:Char; const _array: TStringArray): String;
 
 procedure VersionStrToInt(const s: String; var Ver, VerSub: Integer);
+
+function ValueWithTypeInfoToString(const AValue; const APTypeInfo: PTypeInfo): String;
+function StringToValueWithTypeInfo(const AString: String; const APTypeInfo: PTypeInfo; out AResult): Boolean;
 
 implementation
 
@@ -323,5 +328,108 @@ begin
 
   end;
 end;
+
+function ValueWithTypeInfoToString(const AValue; const APTypeInfo: PTypeInfo): String;
+var
+  APTypeData: PTypeData;
+  IntToIdentFn: TIntToIdent;
+  Val: Int64;
+begin
+  Result := '';
+  case APTypeInfo^.Kind of
+    tkInteger, tkEnumeration: begin
+      APTypeData := GetTypeData(APTypeInfo);
+      case APTypeData^.OrdType of
+        otUByte,  otSByte:  Val := ShortInt(AValue);
+        otUWord,  otSWord:  Val := SmallInt(AValue);
+        otULong,  otSLong:  Val := Integer(AValue);
+        otUQWord, otSQWord: Val := Int64(AValue);
+      end;
+      case APTypeInfo^.Kind of
+        tkInteger:
+          begin                      // Check if this integer has a string identifier
+            IntToIdentFn := FindIntToIdent(APTypeInfo);
+            if (not Assigned(IntToIdentFn)) or
+               (not IntToIdentFn(Val, Result))
+            then begin
+              if APTypeData^.OrdType in [otSByte,otSWord,otSLong,otSQWord] then
+                Result := IntToStr(Val)
+              else
+                Result := IntToStr(QWord(Val));
+            end;
+          end;
+        tkEnumeration:
+          Result := GetEnumName(APTypeInfo, Val);
+      end;
+    end;
+    tkInt64: Result := IntToStr(Int64(AValue));
+    tkQWord: Result := IntToStr(QWord(AValue));
+    tkSet:   Result := SetToString(APTypeInfo, @AValue, True);
+    tkChar:  Result := Char(AValue);
+    tkWChar: Result := {%H-}WideChar(AValue);
+  end;
+end;
+
+function StringToValueWithTypeInfo(const AString: String; const APTypeInfo: PTypeInfo; out AResult): Boolean;
+var
+  APTypeData: PTypeData;
+  IdentToIntFn: TIdentToInt;
+  Val: Integer;
+begin
+  if APTypeInfo^.Kind in [tkChar, tkWideChar] then
+    Result := Length(AString) = 1 // exactly one char
+  else
+    Result := AString <> '';
+  if not Result then
+    exit;
+
+  case APTypeInfo^.Kind of
+    tkInteger, tkEnumeration: begin
+      APTypeData := GetTypeData(APTypeInfo);
+      case APTypeInfo^.Kind of
+        tkInteger: begin
+          if APTypeData^.OrdType in [otSByte,otSWord,otSLong,otSQWord] then
+            Result := TryStrToInt(AString, Val)
+          else
+            Result := TryStrToDWord(AString, DWord(Val));
+          if not Result then begin
+            IdentToIntFn := FindIdentToInt(APTypeInfo);
+            Result := Assigned(IdentToIntFn) and IdentToIntFn(AString, Val);
+          end;
+        end;
+        tkEnumeration: begin
+          Val := GetEnumValue(APTypeInfo, AString);
+          Result := Val >= 0;
+        end;
+      end;
+      try
+        {$PUSH}{$R+}{$Q+} // Enable range/overflow checks.
+        case APTypeData^.OrdType of
+          otUByte,  otSByte:  ShortInt(AResult) := Val;
+          otUWord,  otSWord:  SmallInt(AResult) := Val;
+          otULong,  otSLong:  Integer(AResult)  := Val;
+          otUQWord, otSQWord: Int64(AResult)    := Val;
+        end;
+        {$POP}
+      except
+        Result := False;
+      end;
+    end;
+    tkInt64: Result := TryStrToInt64(AString, Int64(AResult));
+    tkQWord: Result := TryStrToQWord(AString, QWord(AResult));
+    tkSet: begin
+      try
+        StringToSet(APTypeInfo, AString, @AResult);
+      except
+        Result := False;
+      end;
+    end;
+    tkChar:  Char(AResult) := AString[1];
+    tkWChar: WideChar(AResult) := AString[1];
+    else
+      Result := False;
+  end;
+end;
+
 
 end.
