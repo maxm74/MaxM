@@ -56,13 +56,13 @@ type
   end;
 
   generic IOpenArrayList<T, K> = interface
-    function Get_Index(const AIndex: DWord; out aData: T): Boolean; stdcall;
-    function Get_ID(const aKey: K; out aData: T): Boolean; stdcall;
-    function Set_Index(const AIndex: DWord; var aData: T): Boolean; stdcall;
-    function Set_ID(const aKey: K; var aData: T): Boolean; stdcall;
+    function GetCount: DWord; stdcall;
+    function GetByIndex(const AIndex: DWord; out aData: T): Boolean; stdcall;
+    function GetByKey(const aKey: K; out aData: T): Boolean; stdcall;
+    function SetByIndex(const AIndex: DWord; var aData: T): Boolean; stdcall;
+    function SetByKey(const aKey: K; var aData: T): Boolean; stdcall;
     function CopyFrom(const ACount: DWord; const AArray: array of T): Boolean; stdcall;
   end;
-
 
 implementation
 
