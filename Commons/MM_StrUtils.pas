@@ -37,6 +37,9 @@ procedure VersionStrToInt(const s: String; var Ver, VerSub: Integer);
 function ValueWithTypeInfoToString(const AValue; const APTypeInfo: PTypeInfo): String;
 function StringToValueWithTypeInfo(const AString: String; const APTypeInfo: PTypeInfo; out AResult): Boolean;
 
+function FullPathToRelativePath(const ABasePath: String; var APath: String): Boolean;
+function RelativePathToFullPath(const ABasePath: String; var APath: String): Boolean;
+
 implementation
 
 uses SysUtils;
@@ -429,6 +432,28 @@ begin
     else
       Result := False;
   end;
+end;
+
+function FullPathToRelativePath(const ABasePath: String; var APath: String): Boolean;
+begin
+  Result:= (Pos(ABasePath, APath) = 1);
+  if Result
+  then APath:= '.'+DirectorySeparator+Copy(APath, Length(ABasePath)+1, MaxInt);
+end;
+
+function RelativePathToFullPath(const ABasePath: String; var APath: String): Boolean;
+var
+   curSeparator: Char;
+
+begin
+  for curSeparator in AllowDirectorySeparators do
+  begin
+    Result:= (Pos('.'+curSeparator, APath) = 1);
+    if Result then break;
+  end;
+
+  if Result
+  then APath:= ABasePath+Copy(APath, 3, MaxInt);
 end;
 
 
