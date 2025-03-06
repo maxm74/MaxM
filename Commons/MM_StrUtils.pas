@@ -37,10 +37,10 @@ procedure VersionStrToInt(const s: String; var Ver, VerSub: Integer);
 function ValueWithTypeInfoToString(const AValue; const APTypeInfo: PTypeInfo): String;
 function StringToValueWithTypeInfo(const AString: String; const APTypeInfo: PTypeInfo; out AResult): Boolean;
 
-function FullPathToRelativePath(const ABasePath, APath: String): String; overload;
-function FullPathToRelativePath(const ABasePath, APath: String; var IsRelative: Boolean): String; overload;
-function RelativePathToFullPath(const ABasePath, APath: String): String; overload;
-function RelativePathToFullPath(const ABasePath, APath: String; var IsRelative: Boolean): String; overload;
+function FullPathToRelativePath(ABasePath, APath: String): String; overload;
+function FullPathToRelativePath(ABasePath, APath: String; var IsRelative: Boolean): String; overload;
+function RelativePathToFullPath(ABasePath, APath: String): String; overload;
+function RelativePathToFullPath(ABasePath, APath: String; var IsRelative: Boolean): String; overload;
 
 implementation
 
@@ -436,54 +436,86 @@ begin
   end;
 end;
 
-function FullPathToRelativePath(const ABasePath, APath: String): String;
-begin
-  if (Pos(ABasePath, APath) = 1)
-  then Result:= '.'+DirectorySeparator+Copy(APath, Length(ABasePath)+1, MaxInt)
-  else Result:= APath;
-end;
-
-function FullPathToRelativePath(const ABasePath, APath: String; var IsRelative: Boolean): String;
-begin
-  IsRelative:= Pos(ABasePath, APath) = 1;
-  if IsRelative
-  then Result:= '.'+DirectorySeparator+Copy(APath, Length(ABasePath)+1, MaxInt)
-  else Result:= APath;
-end;
-
-function RelativePathToFullPath(const ABasePath, APath: String): String;
+function FullPathToRelativePath(ABasePath, APath: String): String;
 var
-   curSeparator: Char;
-   aResult: Boolean;
+   i: Integer;
 
 begin
-  aResult:= False;
-  for curSeparator in AllowDirectorySeparators do
-  begin
-    aResult:= (Pos('.'+curSeparator, APath) = 1);
-    if aResult then break;
-  end;
+  Result:= APath;
 
-  if aResult
-  then Result:= ABasePath+Copy(APath, 3, MaxInt)
-  else Result:= APath;
+  //Change other System Directory Separator to Current Separator
+  for i:=1 to Length(ABasePath) do
+    if CharInSet(ABasePath[i], AllowDirectorySeparators)
+    then ABasePath[i]:= DirectorySeparator;
+
+  for i:=1 to Length(Result) do
+    if CharInSet(Result[i], AllowDirectorySeparators)
+    then Result[i]:= DirectorySeparator;
+
+  if (Pos(ABasePath, Result) = 1)
+  then Result:= '.'+DirectorySeparator+Copy(Result, Length(ABasePath)+1, MaxInt);
 end;
 
-function RelativePathToFullPath(const ABasePath, APath: String; var IsRelative: Boolean): String;
+function FullPathToRelativePath(ABasePath, APath: String; var IsRelative: Boolean): String;
 var
-   curSeparator: Char;
+   i: Integer;
 
 begin
-  IsRelative:= False;
-  for curSeparator in AllowDirectorySeparators do
-  begin
-    IsRelative:= (Pos('.'+curSeparator, APath) = 1);
-    if IsRelative then break;
-  end;
+  Result:= APath;
 
+  //Change other System Directory Separator to Current Separator
+  for i:=1 to Length(ABasePath) do
+    if CharInSet(ABasePath[i], AllowDirectorySeparators)
+    then ABasePath[i]:= DirectorySeparator;
+
+  for i:=1 to Length(Result) do
+    if CharInSet(Result[i], AllowDirectorySeparators)
+    then Result[i]:= DirectorySeparator;
+
+  IsRelative:= (Pos(ABasePath, Result) = 1);
   if IsRelative
-  then Result:= ABasePath+Copy(APath, 3, MaxInt)
-  else Result:= APath;
+  then Result:= '.'+DirectorySeparator+Copy(Result, Length(ABasePath)+1, MaxInt);
+end;
+
+function RelativePathToFullPath(ABasePath, APath: String): String;
+var
+   i: Integer;
+
+begin
+  Result:= APath;
+
+  //Change other System Directory Separator to Current Separator
+  for i:=1 to Length(ABasePath) do
+    if CharInSet(ABasePath[i], AllowDirectorySeparators)
+    then ABasePath[i]:= DirectorySeparator;
+
+  for i:=1 to Length(Result) do
+    if CharInSet(Result[i], AllowDirectorySeparators)
+    then Result[i]:= DirectorySeparator;
+
+  if (Pos('.'+DirectorySeparator, Result) = 1)
+  then Result:= ABasePath+Copy(Result, 3, MaxInt);
+end;
+
+function RelativePathToFullPath(ABasePath, APath: String; var IsRelative: Boolean): String;
+var
+   i: Integer;
+
+begin
+  Result:= APath;
+
+  //Change Other System Directory Separator to Current Separator
+  for i:=1 to Length(ABasePath) do
+    if CharInSet(ABasePath[i], AllowDirectorySeparators)
+    then ABasePath[i]:= DirectorySeparator;
+
+  for i:=1 to Length(Result) do
+    if CharInSet(Result[i], AllowDirectorySeparators)
+    then Result[i]:= DirectorySeparator;
+
+  IsRelative:= (Pos('.'+DirectorySeparator, Result) = 1);
+  if IsRelative
+  then Result:= ABasePath+Copy(Result, 3, MaxInt);
 end;
 
 
