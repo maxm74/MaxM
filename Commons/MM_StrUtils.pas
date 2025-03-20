@@ -372,6 +372,17 @@ begin
     tkSet:   Result := SetToString(APTypeInfo, @AValue, True);
     tkChar:  Result := Char(AValue);
     tkWChar: Result := {%H-}WideChar(AValue);
+    tkBool: Result:= BoolToStr(Boolean(AValue), True);
+    tkFloat: begin
+      APTypeData := GetTypeData(APTypeInfo);
+      case APTypeData^.FloatType of
+        ftSingle: Result:= FloatToStr(Single(AValue));
+        ftDouble: Result:= FloatToStr(Double(AValue));
+        ftExtended: Result:= FloatToStr(Extended(AValue));
+        ftComp: Result:= FloatToStr(Comp(AValue));
+        ftCurr: Result:= FloatToStr(Currency(AValue));
+      end;
+    end;
   end;
 end;
 
@@ -431,6 +442,17 @@ begin
     end;
     tkChar:  Char(AResult) := AString[1];
     tkWChar: WideChar(AResult) := AString[1];
+    tkBool: Result:= TryStrToBool(AString, Boolean(AResult));
+    tkFloat: begin
+      APTypeData := GetTypeData(APTypeInfo);
+      case APTypeData^.FloatType of
+        ftSingle: Result:= TryStrToFloat(AString, Single(AResult));
+        ftDouble: Result:= TryStrToFloat(AString, Double(AResult));
+        ftExtended: Result:= TryStrToFloat(AString, Extended(AResult));
+        //ftComp: Result:= TryStrToFloat(AString, Comp(AResult));
+        ftCurr: Result:= TryStrToCurr(AString, Currency(AResult));
+      end;
+    end;
     else
       Result := False;
   end;
