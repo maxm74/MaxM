@@ -5,7 +5,7 @@ unit MM_OpenArrayList;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, testutils;
 
 type
 

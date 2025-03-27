@@ -87,7 +87,9 @@ procedure Register;
 
 implementation
 
-uses MM_VariantsStringList;
+uses MM_VariantsStringList
+    {$IF FPC_FULLVERSION<30300}, MM_StrUtils {$ENDIF}
+    ;
 
 procedure Register;
 begin
@@ -170,7 +172,11 @@ begin
                //Convert Paths to Current System
                DoDirSeparators(currValue);
 
+               {$IF FPC_FULLVERSION<30300}
+               currValue:= RelativePathToFullPath(rBasePath, currValue);
+               {$ELSE}
                currValue:= ExpandFileName(currValue, rBasePath);
+               {$ENDIF}
 
                if (currValue[Length(currValue)] in AllowDirectorySeparators)
                then SetLength(currValue, Length(currValue)-1);
