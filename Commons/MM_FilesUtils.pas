@@ -33,6 +33,9 @@ function GetFilesInDir(BaseDir: String; Recursive: Boolean;
                        SortType: TFilesListSortType; CaseSensitive: Boolean;
                        ReturnFullPath: Boolean): TStringList; overload;
 
+//Get a Free File Name based on AFileName+AFileExt if file exists then ' (num)' or ' - num' is added
+function GetFileFreeName(BaseDir, AFileName, AFileExt: String;
+                         useParentheses: Boolean; IntDigits: Word): String;
 
 //Folders Routines
 procedure CopyFileOnPath(SourcePath, DestPath, AWildList:String; ARecursive :Boolean = True);
@@ -40,7 +43,7 @@ procedure DeleteFileOnPath(BasePath, AWildList:String; ARecursive :Boolean = Tru
 
 implementation
 
-uses StrUtils, LazFileUtils, FileUtil, Masks;
+uses Math, StrUtils, LazFileUtils, FileUtil, Masks;
 
 function NaturalCompare(aList: TStringList; aIndex1, aIndex2: Integer): Integer;
 begin
@@ -211,6 +214,35 @@ begin
   end;
 end;
 
+function GetFileFreeName(BaseDir, AFileName, AFileExt: String;
+                         useParentheses: Boolean; IntDigits: Word): String;
+var
+   i,
+   maxI: Integer;
+   formatString: String;
+   finded: Boolean;
+
+begin
+  Result:= AFileName+AFileExt;
+  if FileExists(BaseDir+DirectorySeparator+Result) then
+  begin
+    finded:= False;
+    i:= 1;
+    maxI:= 10**IntDigits;
+
+    if useParentheses
+    then formatString:= ' (%.'+IntToStr(IntDigits)+'d)'
+    else formatString:= ' - %.'+IntToStr(IntDigits)+'d';
+
+    repeat
+      Result:= AFileName+Format(formatString, [i])+AFileExt;
+      finded:= not(FileExists(BaseDir+DirectorySeparator+Result));
+
+      inc(i);
+    until finded or (i >= maxI);
+    if not(finded) then Result:= '';
+  end;
+end;
 
 procedure CopyFileOnPath(SourcePath, DestPath, AWildList :String; ARecursive :Boolean = True);
 var
