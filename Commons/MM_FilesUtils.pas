@@ -21,32 +21,44 @@ uses
 
 type
     // TODO: flsSortDateTime
-    TFilesListSortType = (flsSortNone, flsSortNumeric, flsSortName);
+    TFilesListSortType = (flsSortNone, flsSortNumeric, flsSortName, flsSortNatural);
 
 function GetFilesCount(ADir: String; AExt: String) :Longint;
+
 function GetFilesInDir(ADir: String; AExt: String;
                        SortType: TFilesListSortType = flsSortName;
-                       Duplicates: TDuplicates = dupIgnore; CaseSensitive: Boolean = True): TStringList;
+                       (*Duplicates: TDuplicates = dupIgnore;*) CaseSensitive: Boolean = True): TStringList; overload;
+function GetFilesInDir(BaseDir: String; Recursive: Boolean;
+                       EnumAttr: Integer; EnumFilter: String;
+                       SortType: TFilesListSortType; CaseSensitive: Boolean;
+                       ReturnFullPath: Boolean): TStringList; overload;
+
 
 //Folders Routines
 procedure CopyFileOnPath(SourcePath, DestPath, AWildList:String; ARecursive :Boolean = True);
 procedure DeleteFileOnPath(BasePath, AWildList:String; ARecursive :Boolean = True);
 
 implementation
-uses LazFileUtils, FileUtil, Masks;
 
-type
-    TLongintStringList = class(TStringList)
-    protected
-      function DoCompareText(const s1,s2 : string) : PtrInt; override;
-    end;
+uses StrUtils, LazFileUtils, FileUtil, Masks;
 
-function TLongintStringList.DoCompareText(const s1, s2: string): PtrInt;
+function NaturalCompare(aList: TStringList; aIndex1, aIndex2: Integer): Integer;
+begin
+ Result:= NaturalCompareText(StringReplace(aList[aIndex1], ExtractFileExt(aList[aIndex1]), '', []),
+                             StringReplace(aList[aIndex2], ExtractFileExt(aList[aIndex2]), '', []));
+ // Result:= NaturalCompareText(aList[aIndex1], aList[aIndex2]);
+end;
+
+function LongintCompare(aList: TStringList; aIndex1, aIndex2: Integer): Integer;
 var
-i1, i2 :LongInt;
+   i1, i2: LongInt;
+   s1, s2: String;
 
 begin
  try
+    s1:= aList[aIndex1];
+    s2:= aList[aIndex2];
+
     i1 :=StrToInt(Copy(s1, 1, Pos(ExtensionSeparator, s1)-1));
     i2 :=StrToInt(Copy(s2, 1, Pos(ExtensionSeparator, s2)-1));
     if (i1 = i2)
@@ -55,10 +67,9 @@ begin
          then Result :=1
          else Result :=-1;
  except
-    Result:=inherited DoCompareText(s1, s2);
+    Result:= NaturalCompareText(s1, s2);
  end;
 end;
-
 
 function GetFilesCount(ADir: String; AExt: String): Longint;
 var
@@ -87,32 +98,19 @@ end;
 
 function GetFilesInDir(ADir: String; AExt: String;
                        SortType: TFilesListSortType;
-                       Duplicates: TDuplicates; CaseSensitive: Boolean): TStringList;
+                       (*Duplicates: TDuplicates;*) CaseSensitive: Boolean): TStringList;
 var
   err: Integer;
   fileInfo: TSearchRec;
 
 begin
+  (*
   Result :=nil;
   if not(ADir[Length(ADir)] in AllowDirectorySeparators)
   then ADir :=ADir+DirectorySeparator;
 
   try
-     Case SortType of
-     flsSortNone: begin
-                       Result :=TStringList.Create;
-                       Result.Sorted :=False;
-                   end;
-     flsSortNumeric: begin
-                          Result :=TLongintStringList.Create;
-                          Result.Sorted :=True;
-                      end;
-     flsSortName: begin
-                       Result :=TStringList.Create;
-                       Result.Sorted :=True;
-                   end;
-     end;
-     Result.CaseSensitive :=CaseSensitive;
+     Result:= TStringList.Create;
      Result.Duplicates :=Duplicates;
 
      err :=FindFirst(ADir+'*'+ExtensionSeparator+AExt, faAnyFile, fileInfo);
@@ -124,10 +122,95 @@ begin
           err :=FindNext(fileInfo);
       end;
 
+     Case SortType of
+       flsSortNone: Result.Sorted:= False;
+       flsSortName: Result.Sorted:= True;
+       flsSortNumeric: Result.CustomSort(@LongintCompare);
+       flsSortNatural: Result.CustomSort(@NaturalCompare);
+     end;
+
   finally
      FindClose(fileInfo);
   end;
+  *)
+  Result:= GetFilesInDir(ADir, False, faAnyFile, '*'+ExtensionSeparator+AExt, SortType, CaseSensitive, False);
 end;
+
+function GetFilesInDir(BaseDir: String; Recursive: Boolean;
+                       EnumAttr: Integer; EnumFilter: String;
+                       SortType: TFilesListSortType; CaseSensitive: Boolean;
+                       ReturnFullPath: Boolean): TStringList;
+var
+   fileInfo: TSearchRec;
+   err, i,
+   len, lenC: Integer;
+   subFiles,
+   recFiles: TStringList;
+   CanAdd: Boolean;
+
+begin
+  Result :=nil;
+  try
+     Result:= TStringList.Create;
+
+     if Recursive
+     then recFiles:= TStringList.Create
+     else recFiles:= nil;
+
+     err :=FindFirst(BaseDir+DirectorySeparator+'*', faAnyFile, fileInfo);
+     while (err=0) do
+     begin
+       if (fileInfo.Name[1] <> '.') then  //not [.] or [..]
+       begin
+         CanAdd :=((fileInfo.Attr and EnumAttr) <>0) and
+                   MatchesMaskList(fileInfo.Name, EnumFilter, ';', CaseSensitive);
+
+         if ((fileInfo.Attr and faDirectory)<>0)
+         then begin
+                if Recursive then
+                try
+                  subFiles:= GetFilesInDir(BaseDir+DirectorySeparator+fileInfo.Name, Recursive,
+                                           EnumAttr, EnumFilter,
+                                           SortType, CaseSensitive,
+                                           ReturnFullPath);
+
+                  if not(ReturnFullPath) then //Add as Relative Path (Add .\ ?)
+                    for i:=0 to subFiles.Count-1 do
+                      subFiles[i]:= fileInfo.Name+DirectorySeparator+subFiles[i];
+
+                  recFiles.AddStrings(subFiles);
+
+                finally
+                  subFiles.Free;
+                end;
+
+              end
+         else if CanAdd then Result.Add(fileInfo.Name);
+       end;
+
+       err :=FindNext(fileInfo);
+     end;
+
+     Case SortType of
+       flsSortNone: Result.Sorted:= False;
+       flsSortName: Result.Sort;
+       flsSortNumeric: Result.CustomSort(@LongintCompare);
+       flsSortNatural: Result.CustomSort(@NaturalCompare);
+     end;
+
+     if ReturnFullPath then
+       for i:=0 to Result.Count-1 do Result[i]:= BaseDir+DirectorySeparator+Result[i];
+
+     //Insert Recursive Files as First
+     if (recFiles <> nil) then
+       for i:=recFiles.Count-1 downto 0 do Result.Insert(0, recFiles[i]);
+
+  finally
+    FindClose(fileInfo);
+    if (recFiles <> nil) then recFiles.Free;
+  end;
+end;
+
 
 procedure CopyFileOnPath(SourcePath, DestPath, AWildList :String; ARecursive :Boolean = True);
 var
