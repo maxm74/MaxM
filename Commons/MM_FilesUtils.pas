@@ -27,7 +27,7 @@ function GetFilesCount(ADir: String; AExt: String) :Longint;
 
 function GetFilesInDir(ADir: String; AExt: String;
                        SortType: TFilesListSortType = flsSortName;
-                       (*Duplicates: TDuplicates = dupIgnore;*) CaseSensitive: Boolean = True): TStringList; overload;
+                       CaseSensitive: Boolean = True): TStringList; overload;
 function GetFilesInDir(BaseDir: String; Recursive: Boolean;
                        EnumAttr: Integer; EnumFilter: String;
                        SortType: TFilesListSortType; CaseSensitive: Boolean;
@@ -82,7 +82,7 @@ var
 begin
   Result :=0;
   if not(ADir[Length(ADir)] in AllowDirectorySeparators)
-  then ADir :=ADir+DirectorySeparator;
+  then ADir:= ADir+DirectorySeparator;
 
   try
      err :=FindFirst(ADir+'*'+ExtensionSeparator+AExt, faAnyFile, fileInfo);
@@ -101,41 +101,8 @@ end;
 
 function GetFilesInDir(ADir: String; AExt: String;
                        SortType: TFilesListSortType;
-                       (*Duplicates: TDuplicates;*) CaseSensitive: Boolean): TStringList;
-var
-  err: Integer;
-  fileInfo: TSearchRec;
-
+                       CaseSensitive: Boolean): TStringList;
 begin
-  (*
-  Result :=nil;
-  if not(ADir[Length(ADir)] in AllowDirectorySeparators)
-  then ADir :=ADir+DirectorySeparator;
-
-  try
-     Result:= TStringList.Create;
-     Result.Duplicates :=Duplicates;
-
-     err :=FindFirst(ADir+'*'+ExtensionSeparator+AExt, faAnyFile, fileInfo);
-     while (err = 0) do
-     begin
-          if (fileInfo.Name[1] <> '.')
-          then Result.Add(Fileinfo.Name);
-
-          err :=FindNext(fileInfo);
-      end;
-
-     Case SortType of
-       flsSortNone: Result.Sorted:= False;
-       flsSortName: Result.Sorted:= True;
-       flsSortNumeric: Result.CustomSort(@LongintCompare);
-       flsSortNatural: Result.CustomSort(@NaturalCompare);
-     end;
-
-  finally
-     FindClose(fileInfo);
-  end;
-  *)
   Result:= GetFilesInDir(ADir, False, faAnyFile, '*'+ExtensionSeparator+AExt, SortType, CaseSensitive, False);
 end;
 
@@ -154,25 +121,33 @@ var
 begin
   Result :=nil;
   try
+     if not(BaseDir[Length(BaseDir)] in AllowDirectorySeparators)
+     then BaseDir:= BaseDir+DirectorySeparator;
+
      Result:= TStringList.Create;
 
      if Recursive
      then recFiles:= TStringList.Create
      else recFiles:= nil;
 
-     err :=FindFirst(BaseDir+DirectorySeparator+'*', faAnyFile, fileInfo);
+     err :=FindFirst(BaseDir+'*', faAnyFile, fileInfo);
      while (err=0) do
      begin
        if (fileInfo.Name[1] <> '.') then  //not [.] or [..]
        begin
-         CanAdd :=((fileInfo.Attr and EnumAttr) <>0) and
-                   MatchesMaskList(fileInfo.Name, EnumFilter, ';', CaseSensitive);
+         CanAdd:= ((fileInfo.Attr and EnumAttr) <>0) and
+                  //testare il codice condizionale sotto
+                  {$IFDEF Windows}
+                  MatchesWindowsMaskList(fileInfo.Name, EnumFilter, ';', CaseSensitive);
+                  {$ELSE}
+                  MatchesMaskList(fileInfo.Name, EnumFilter, ';', CaseSensitive);
+                  {$ENDIF}
 
          if ((fileInfo.Attr and faDirectory)<>0)
          then begin
                 if Recursive then
                 try
-                  subFiles:= GetFilesInDir(BaseDir+DirectorySeparator+fileInfo.Name, Recursive,
+                  subFiles:= GetFilesInDir(BaseDir+fileInfo.Name+DirectorySeparator, Recursive,
                                            EnumAttr, EnumFilter,
                                            SortType, CaseSensitive,
                                            ReturnFullPath);
@@ -181,7 +156,10 @@ begin
                     for i:=0 to subFiles.Count-1 do
                       subFiles[i]:= fileInfo.Name+DirectorySeparator+subFiles[i];
 
+                  len:= subFiles.Count;
+                  lenC:= recFiles.Count;
                   recFiles.AddStrings(subFiles);
+                  lenC:= recFiles.Count;
 
                 finally
                   subFiles.Free;
@@ -194,6 +172,8 @@ begin
        err :=FindNext(fileInfo);
      end;
 
+     lenC:= Result.Count;
+
      Case SortType of
        flsSortNone: Result.Sorted:= False;
        flsSortName: Result.Sort;
@@ -201,12 +181,18 @@ begin
        flsSortNatural: Result.CustomSort(@NaturalCompare);
      end;
 
-     if ReturnFullPath then
-       for i:=0 to Result.Count-1 do Result[i]:= BaseDir+DirectorySeparator+Result[i];
+     lenC:= Result.Count;
 
-     //Insert Recursive Files as First
-     if (recFiles <> nil) then
-       for i:=recFiles.Count-1 downto 0 do Result.Insert(0, recFiles[i]);
+    if ReturnFullPath then
+       for i:=0 to Result.Count-1 do Result[i]:= BaseDir+Result[i];
+
+    lenC:= Result.Count;
+
+    //Insert Recursive Files as First
+    if (recFiles <> nil) then
+      for i:=recFiles.Count-1 downto 0 do Result.Insert(0, recFiles[i]);
+
+    lenC:= Result.Count;
 
   finally
     FindClose(fileInfo);
@@ -223,8 +209,11 @@ var
    finded: Boolean;
 
 begin
+  if not(BaseDir[Length(BaseDir)] in AllowDirectorySeparators)
+  then BaseDir:= BaseDir+DirectorySeparator;
+
   Result:= AFileName+AFileExt;
-  if FileExists(BaseDir+DirectorySeparator+Result) then
+  if FileExists(BaseDir+Result) then
   begin
     finded:= False;
     i:= 1;
@@ -236,7 +225,7 @@ begin
 
     repeat
       Result:= AFileName+Format(formatString, [i])+AFileExt;
-      finded:= not(FileExists(BaseDir+DirectorySeparator+Result));
+      finded:= not(FileExists(BaseDir+Result));
 
       inc(i);
     until finded or (i >= maxI);
@@ -252,16 +241,22 @@ var
    IsDir      :Boolean;
 
 begin
-   err :=FindFirst(SourcePath+DirectorySeparator+'*', faAnyFile, fileInfo);
+   if not(SourcePath[Length(SourcePath)] in AllowDirectorySeparators)
+   then SourcePath:= SourcePath+DirectorySeparator;
+
+   if not(DestPath[Length(DestPath)] in AllowDirectorySeparators)
+   then DestPath:= DestPath+DirectorySeparator;
+
+   err:= FindFirst(SourcePath+'*', faAnyFile, fileInfo);
    while (err=0) do
    begin
         if (fileInfo.Name[1] <> '.') then  //non è [.] o [..]
         begin
-             IsDir  :=((fileInfo.Attr and faDirectory)<>0);
+             IsDir:= ((fileInfo.Attr and faDirectory)<>0);
 
-             //CanCopy :=MatchesMaskList(fileInfo.Name, AWildList);  testare il codice condizionale sotto
+             //testare il codice condizionale sotto
              {$IFDEF Windows}
-             CanCopy :=MatchesWindowsMaskList(fileInfo.Name, AWildList);
+             CanCopy:= MatchesWindowsMaskList(fileInfo.Name, AWildList);
              {$ELSE}
              CanCopy :=MatchesMaskList(fileInfo.Name, AWildList);
              {$ENDIF}
@@ -269,13 +264,13 @@ begin
              if IsDir
              then begin
                     if ARecursive
-                    then CopyFileOnPath(SourcePath+DirectorySeparator+fileInfo.Name,
-                                        DestPath+DirectorySeparator+fileInfo.Name,
+                    then CopyFileOnPath(SourcePath+fileInfo.Name+DirectorySeparator,
+                                        DestPath+fileInfo.Name+DirectorySeparator,
                                         AWildList, True);
                   end
              else if CanCopy
-                  then FileUtil.CopyFile(SourcePath+DirectorySeparator+fileInfo.Name,
-                                         DestPath+DirectorySeparator+fileInfo.Name,
+                  then FileUtil.CopyFile(SourcePath+fileInfo.Name,
+                                         DestPath+fileInfo.Name,
                                          [cffOverwriteFile, cffCreateDestDirectory]);
         end;
         err :=FindNext(fileInfo);
@@ -291,21 +286,30 @@ var
    IsDir      :Boolean;
 
 begin
-   err :=FindFirst(BasePath+DirectorySeparator+'*', faAnyFile, fileInfo);
+   if not(BasePath[Length(BasePath)] in AllowDirectorySeparators)
+   then BasePath:= BasePath+DirectorySeparator;
+
+   err :=FindFirst(BasePath+'*', faAnyFile, fileInfo);
    while (err=0) do
    begin
         if (fileInfo.Name[1] <> '.') then  //non è [.] o [..]
         begin
              IsDir  :=((fileInfo.Attr and faDirectory)<>0);
+             //testare il codice condizionale sotto
+             {$IFDEF Windows}
+             CanDel:= MatchesWindowsMaskList(fileInfo.Name, AWildList);
+             {$ELSE}
              CanDel :=MatchesMaskList(fileInfo.Name, AWildList);
+             {$ENDIF}
+
              if IsDir
              then begin
                     if ARecursive
-                    then DeleteFileOnPath(BasePath+DirectorySeparator+fileInfo.Name,
+                    then DeleteFileOnPath(BasePath+fileInfo.Name+DirectorySeparator,
                                           AWildList, True);
                   end
              else if CanDel
-                  then LazFileUtils.DeleteFileUTF8(BasePath+DirectorySeparator+fileInfo.Name);
+                  then LazFileUtils.DeleteFileUTF8(BasePath+fileInfo.Name);
         end;
         err :=FindNext(fileInfo);
    end;
