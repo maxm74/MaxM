@@ -8,9 +8,53 @@ uses
   Classes, SysUtils, testutils;
 
 type
+   { TOpenArray }
+  generic TOpenArray<T> = class(TNoRefCountObject)
+  protected
+    rList: array of T;
+
+    function Get(Index: DWord) : T; virtual; overload;
+
+    function FreeElement(var aData: T): Boolean; virtual;
+    function CompData(aData1, aData2: T): Integer; virtual;  //0 = , -1 AData1 < AData2, 1 AData1 > AData2
+
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    function Add(const aData: T): DWord; virtual; overload;
+    function Add(const ACount: DWord; const ADataArray: array of T): Boolean; virtual; overload;
+
+    function CopyFrom(const ACount: DWord; const ADataArray: array of T): Boolean; virtual;
+
+    function Del(const aData: T): Boolean; virtual; overload;
+    function Del(const aIndex: DWord): Boolean; virtual; overload;
+
+    function Clear: Boolean; virtual;
+
+    function Find(const aData: T): Integer; virtual;
+
+    function GetCount: DWord; virtual; stdcall;
+    function Get(const aIndex: DWord; out aData: T): Boolean; virtual; overload; stdcall;
+
+    property Count: DWord read GetCount;
+
+    property Data[const aIndex: DWord]: T read Get; default;
+  end;
+
+  generic IOpenArrayR<T> = interface
+    function GetCount: DWord; stdcall;
+    function Get(const AIndex: DWord; out aData: T): Boolean; stdcall;
+  end;
+
+  generic IOpenArrayW<T> = interface
+    function Add(const aData: T): DWord;  stdcall;
+    function Put(const AIndex: DWord; var aData: T): Boolean; stdcall;
+    function CopyFrom(const ACount: DWord; const AArray: array of T): Boolean; stdcall;
+    function Del(const aData: T): Boolean; stdcall;
+  end;
 
   { TOpenArrayList }
-
   generic TOpenArrayList<T, K> = class(TNoRefCountObject)
   type
     TInfo = record
@@ -22,10 +66,9 @@ type
   protected
     rList: array of TInfo;
 
-    function Get(const aKey: K) : PData; overload;
-    function Get(Index: Integer) : PData; overload;
-    function GetKey(Index: Integer) : K;
-    function GetCount: Integer;
+    function Get(const aKey: K) : PData; virtual; overload;
+    function GetByIndex(Index: DWord) : PData; virtual;
+    function GetKey(Index: DWord) : K; virtual;
 
     function FreeElement(var aData: T): Boolean; virtual;
     function CompData(aData1, aData2: T): Integer; virtual;  //0 = , -1 AData1 < AData2, 1 AData1 > AData2
@@ -34,37 +77,190 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Add(const aKey: K; const aData: T): Integer; overload;
-    function Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; overload;
+    function Add(const aKey: K; const aData: T): Integer; virtual; overload;
+    function Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; virtual; overload;
 
-    function CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean;
+    function CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; virtual;
 
-    function Del(const aKey: K): Boolean; overload;
-    function Del(const aData: T): Boolean; overload;
-    function Del(const aIndex: Integer): Boolean; overload;
+    function Del(const aKey: K): Boolean; virtual; overload;
+    function Del(const aData: T): Boolean; virtual; overload;
+    function Del(const aIndex: DWord): Boolean; virtual; overload;
 
-    function Clear: Boolean;
+    function Clear: Boolean; virtual;
 
-    function FindByKey(const aKey: K): Integer;
-    function Find(const aData: T): Integer;
+    function FindByKey(const aKey: K): Integer; virtual;
+    function Find(const aData: T): Integer; virtual;
 
-    property Count: Integer read GetCount;
+    function GetCount: DWord; virtual; stdcall;
+    function Get(const aIndex: DWord; out aData: T): Boolean; virtual; overload; stdcall;
+    function GetByKey(const aKey: K; out aData: T): Boolean; virtual; stdcall;
 
-    property DataByKey [const aKey: K]: PData read Get;
-    property Data [const aIndex: Integer]: PData read Get;
-    property Key [const aIndex: Integer]: K read GetKey;
+    property Count: DWord read GetCount;
+
+    property DataByKey[const aKey: K]: PData read Get;
+    property Data[const aIndex: DWord]: PData read GetByIndex; default;
+    property Key[const aIndex: DWord]: K read GetKey;
   end;
 
-  generic IOpenArrayList<T, K> = interface
+  generic IOpenArrayListR<T, K> = interface
     function GetCount: DWord; stdcall;
-    function GetByIndex(const AIndex: DWord; out aData: T): Boolean; stdcall;
+    function Get(const AIndex: DWord; out aData: T): Boolean; stdcall;
     function GetByKey(const aKey: K; out aData: T): Boolean; stdcall;
-    function SetByIndex(const AIndex: DWord; var aData: T): Boolean; stdcall;
-    function SetByKey(const aKey: K; var aData: T): Boolean; stdcall;
+  end;
+
+  generic IOpenArrayListW<T, K> = interface
+    function Put(const AIndex: DWord; var aData: T): Boolean; stdcall;
+    function PutByKey(const aKey: K; var aData: T): Boolean; stdcall;
     function CopyFrom(const ACount: DWord; const AArray: array of T): Boolean; stdcall;
   end;
 
 implementation
+
+uses SysConst;
+
+{ TOpenArray }
+
+function TOpenArray.Get(Index: DWord): T;
+begin
+  if (Index < Length(rList))
+  then Result:= rList[Index]
+  else raise EListError.Create(Format(SListIndexError, [Index]));
+end;
+
+function TOpenArray.Get(const aIndex: DWord; out aData: T): Boolean; stdcall;
+begin
+  aData:= Default(T);
+  try
+     aData:= Get(aIndex);
+     Result:=True;
+  except
+    Result:= False;
+  end;
+end;
+
+function TOpenArray.GetCount: DWord; stdcall;
+begin
+  Result:= Length(rList);
+end;
+
+function TOpenArray.FreeElement(var aData: T): Boolean;
+begin
+  Result:= True;
+end;
+
+function TOpenArray.CompData(aData1, aData2: T): Integer;
+begin
+  Result:= -1;
+end;
+
+constructor TOpenArray.Create;
+begin
+  inherited Create;
+
+  rList:= Nil;
+end;
+
+destructor TOpenArray.Destroy;
+begin
+  Clear;
+
+  inherited Destroy;
+end;
+
+function TOpenArray.Add(const aData: T): DWord;
+begin
+  Result:= Length(rList);
+  SetLength(rList, Result+1);
+
+  rList[Result]:= aData;
+end;
+
+function TOpenArray.Add(const ACount: DWord; const ADataArray: array of T): Boolean;
+var
+   i: Integer;
+
+begin
+  Result:= True;
+
+  for i:=Low(ADataArray) to High(ADataArray) do
+  try
+     Add(ADataArray[i]);
+  except
+      Result:= False;
+      break;
+  end;
+end;
+
+function TOpenArray.CopyFrom(const ACount: DWord; const ADataArray: array of T): Boolean;
+begin
+  Result:= Clear and Add(ACount, ADataArray);
+end;
+
+function TOpenArray.Del(const aData: T): Boolean;
+var
+   r : Integer;
+
+begin
+  Result:= False;
+
+  r:= Find(aData);
+  if (r > -1) then
+  begin
+    Result:= FreeElement(rList[r]);
+
+    Delete(rList, r, 1);
+    Result:= True;
+  end;
+end;
+
+function TOpenArray.Del(const aIndex: DWord): Boolean;
+begin
+  Result:= False;
+  if (aIndex < Length(rList)) then
+  begin
+    Result:= FreeElement(rList[aIndex]);
+
+    Delete(rList, aIndex, 1);
+    Result:= True;
+  end;
+end;
+
+function TOpenArray.Clear: Boolean;
+var
+   i: Integer;
+
+begin
+  Result:= True;
+
+  for i:=0 to Length(rList)-1 do
+  begin
+    try
+       FreeElement(rList[i]);
+
+    except
+      Result:= False;
+    end;
+  end;
+
+  try
+     rList:= Nil;
+  except
+    Result:= False;
+  end;
+end;
+
+function TOpenArray.Find(const aData: T): Integer;
+var
+  i: Integer;
+
+begin
+  Result:= -1;
+  for i:=0 to Length(rList)-1 do
+    if (CompData(rList[i], aData) = 0) then
+    begin
+      Result:= i; break;
+    end;
+end;
 
 { TOpenArrayList }
 
@@ -80,21 +276,53 @@ begin
   then Result:= @rList[r].Data;
 end;
 
-function TOpenArrayList.Get(Index: Integer): PData;
+function TOpenArrayList.GetByIndex(Index: DWord): PData;
 begin
-  if (Index >= 0) and (Index < Length(rList))
+  if (Index < Length(rList))
   then Result:= @rList[Index].Data
-  else Result:= Nil;
+  else raise EListError.Create(Format(SListIndexError, [Index]));
 end;
 
-function TOpenArrayList.GetKey(Index: Integer): K;
+function TOpenArrayList.Get(const aIndex: DWord; out aData: T): Boolean; stdcall;
+var
+   resData: PData;
+
 begin
-  if (Index >= 0) and (Index < Length(rList))
+  aData:= Default(T);
+  try
+     resData:= GetByIndex(aIndex);
+     Result:= (resData<>nil);
+     if Result then aData:= resData^;
+
+  except
+    Result:= False;
+  end;
+end;
+
+function TOpenArrayList.GetKey(Index: DWord): K;
+begin
+  if (Index < Length(rList))
   then Result:= rList[Index].Key
   else Result:= Default(K);
 end;
 
-function TOpenArrayList.GetCount: Integer;
+function TOpenArrayList.GetByKey(const aKey: K; out aData: T): Boolean; stdcall;
+var
+   resData: PData;
+
+begin
+  aData:= Default(T);
+  try
+     resData:= Get(aKey);
+     Result:= (resData<>nil);
+     if Result then aData:= resData^;
+
+  except
+    Result:= False;
+  end;
+end;
+
+function TOpenArrayList.GetCount: DWord; stdcall;
 begin
   Result:= Length(rList);
 end;
@@ -146,9 +374,7 @@ begin
 
   for i:=Low(AKeyArray) to High(AKeyArray) do
   try
-     Result:= (Add(AKeyArray[i], ADataArray[i]) >= 0);
-     if (Result = False)
-     then break;
+     Add(AKeyArray[i], ADataArray[i]);
   except
       Result:= False;
       break;
@@ -157,8 +383,7 @@ end;
 
 function TOpenArrayList.CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean;
 begin
-  Clear;
-  Add(ACount, AKeyArray, ADataArray);
+  Result:= Clear and Add(ACount, AKeyArray, ADataArray);
 end;
 
 function TOpenArrayList.Del(const aKey: K): Boolean;
@@ -195,10 +420,10 @@ begin
   end;
 end;
 
-function TOpenArrayList.Del(const aIndex: Integer): Boolean;
+function TOpenArrayList.Del(const aIndex: DWord): Boolean;
 begin
   Result:= False;
-  if (aIndex > -1) then
+  if (aIndex < Length(rList)) then
   begin
     Result:= FreeElement(rList[aIndex].Data);
 
