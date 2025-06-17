@@ -11,8 +11,9 @@
       </SearchPaths>
     </CompilerOptions>
     <Description Value="MaxM Common Units and Forms"/>
-    <Version Minor="2"/>
-    <Files Count="17">
+    <License Value="GPL 3.0"/>
+    <Version Minor="3"/>
+    <Files Count="18">
       <Item1>
         <Filename Value="MM_IniFiles.pas"/>
         <UnitName Value="MM_IniFiles"/>
@@ -81,8 +82,17 @@
         <Filename Value="MM_OpenArrayList.pas"/>
         <UnitName Value="MM_OpenArrayList"/>
       </Item17>
+      <Item18>
+        <Filename Value="MM_Form_EditText.pas"/>
+        <UnitName Value="MM_Form_EditText"/>
+      </Item18>
     </Files>
     <CompatibilityMode Value="True"/>
+    <i18n>
+      <EnableI18N Value="True"/>
+      <OutDir Value="languages"/>
+      <EnableI18NForLFM Value="True"/>
+    </i18n>
     <RequiredPkgs Count="4">
       <Item1>
         <PackageName Value="LCL"/>

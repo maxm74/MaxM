@@ -16,10 +16,10 @@ unit MM_StrUtils;
 
 interface
 
-uses Classes, TypInfo;
+uses SysUtils, Classes, TypInfo;
 
-type
-   TStringArray = array of string;
+//type
+//   TStringArray = array of string;
 
 function EncodeControlChars(const s: String): String;
 function DecodeControlChars(const s: String): String;
@@ -42,9 +42,14 @@ function FullPathToRelativePath(ABasePath, APath: String; var IsRelative: Boolea
 function RelativePathToFullPath(ABasePath, APath: String): String; overload;
 function RelativePathToFullPath(ABasePath, APath: String; var IsRelative: Boolean): String; overload;
 
+function StringArrayFind(const AText: String; ATitleArray: TStringArray; caseInsensitive: Boolean): Boolean;
+
+function StringArrayFindSubStr(const AText: String; ATitleArray: TStringArray; caseInsensitive: Boolean): Boolean; overload;
+function StringArrayFindSubStr(const AText: String; ATitleArray: TStringArray; caseInsensitive: Boolean; var subIndex: Integer): Integer; overload;
+
 implementation
 
-uses SysUtils;
+uses StrUtils;
 
 function EncodeControlChars(const s: String): String;
 var
@@ -540,5 +545,56 @@ begin
   then Result:= ABasePath+Copy(Result, 3, MaxInt);
 end;
 
+function StringArrayFindSubStr(const AText: String; ATitleArray: TStringArray; caseInsensitive: Boolean): Boolean;
+var
+   dummy: Integer;
+
+begin
+  Result:= (StringArrayFindSubStr(AText, ATitleArray, caseInsensitive, dummy) > -1);
+end;
+
+function StringArrayFindSubStr(const AText: String; ATitleArray: TStringArray; caseInsensitive: Boolean; var subIndex: Integer): Integer;
+var
+   i: Integer;
+   ATextI: String;
+
+begin
+  Result:= -1;
+  if (AText = '') or (ATitleArray = nil) then exit;
+
+  if caseInsensitive
+  then begin
+         ATextI:= Uppercase(AText);
+         for i:=Low(ATitleArray) to High(ATitleArray) do
+         begin
+           subIndex:= PosEx(AText, Uppercase(ATitleArray[i]));
+           if (subIndex > -1) then begin Result:= i; break end;
+         end;
+       end
+  else for i:=Low(ATitleArray) to High(ATitleArray) do
+       begin
+         subIndex:= PosEx(AText, ATitleArray[i]);
+         if (subIndex > -1) then begin Result:= i; break end;
+       end;
+end;
+
+function StringArrayFind(const AText: String; ATitleArray: TStringArray; caseInsensitive: Boolean): Boolean;
+var
+   i: Integer;
+   ATextI: String;
+
+begin
+  Result:= False;
+  if (AText = '') or (ATitleArray = nil) then exit;
+
+  if caseInsensitive
+  then begin
+         ATextI:= Uppercase(AText);
+         for i:=Low(ATitleArray) to High(ATitleArray) do
+           if (ATextI = Uppercase(ATitleArray[i])) then begin Result:= True; break end;
+       end
+  else for i:=Low(ATitleArray) to High(ATitleArray) do
+         if (AText = ATitleArray[i]) then begin Result:= True; break end;
+end;
 
 end.

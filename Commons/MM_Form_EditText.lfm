@@ -1,0 +1,49 @@
+object FormEditText: TFormEditText
+  Left = 344
+  Height = 135
+  Top = 34
+  Width = 500
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsDialog
+  Caption = 'FormEditText'
+  ClientHeight = 135
+  ClientWidth = 500
+  DesignTimePPI = 120
+  Position = poScreenCenter
+  LCLVersion = '4.99.0.0'
+  object btPanel: TButtonPanel
+    Left = 8
+    Height = 38
+    Top = 89
+    Width = 484
+    BorderSpacing.Around = 8
+    OKButton.Name = 'OKButton'
+    OKButton.DefaultCaption = True
+    HelpButton.Name = 'HelpButton'
+    HelpButton.DefaultCaption = True
+    CloseButton.Name = 'CloseButton'
+    CloseButton.DefaultCaption = True
+    CancelButton.Name = 'CancelButton'
+    CancelButton.DefaultCaption = True
+    TabOrder = 0
+    ShowButtons = [pbOK, pbCancel]
+  end
+  object lbEdit: TLabeledEdit
+    Left = 8
+    Height = 28
+    Top = 25
+    Width = 484
+    Anchors = [akTop, akLeft, akRight]
+    EditLabel.Height = 20
+    EditLabel.Width = 484
+    EditLabel.Caption = 'Edit :'
+    TabOrder = 1
+    OnChange = lbEditChange
+  end
+  object lbStatus: TLabel
+    Left = 8
+    Height = 1
+    Top = 64
+    Width = 1
+  end
+end
