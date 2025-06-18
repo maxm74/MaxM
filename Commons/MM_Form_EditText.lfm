@@ -3,6 +3,7 @@ object FormEditText: TFormEditText
   Height = 135
   Top = 34
   Width = 500
+  ActiveControl = lbEdit
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'FormEditText'
@@ -10,7 +11,7 @@ object FormEditText: TFormEditText
   ClientWidth = 500
   DesignTimePPI = 120
   Position = poScreenCenter
-  LCLVersion = '4.99.0.0'
+  OnShow = FormShow
   object btPanel: TButtonPanel
     Left = 8
     Height = 38
@@ -34,6 +35,7 @@ object FormEditText: TFormEditText
     Top = 25
     Width = 484
     Anchors = [akTop, akLeft, akRight]
+    AutoSelect = False
     EditLabel.Height = 20
     EditLabel.Width = 484
     EditLabel.Caption = 'Edit :'

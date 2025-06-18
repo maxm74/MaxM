@@ -18,6 +18,7 @@ type
     btPanel: TButtonPanel;
     lbStatus: TLabel;
     lbEdit: TLabeledEdit;
+    procedure FormShow(Sender: TObject);
     procedure lbEditChange(Sender: TObject);
   private
     rTextChange: TFormEditText_StatusEvent;
@@ -43,12 +44,19 @@ var
   AStatusColor: TColor;
 
 begin
-  if Assigned(rTextChange) then
+  btPanel.OKButton.Enabled:= (lbEdit.Text <> '');
+
+  if btPanel.OKButton.Enabled and Assigned(rTextChange) then
   begin
     btPanel.OKButton.Enabled:= rTextChange(lbEdit.Text, AStatusText, AStatusColor);
     lbStatus.Caption:= AStatusText;
     lbStatus.Font.Color:= AStatusColor;
   end;
+end;
+
+procedure TFormEditText.FormShow(Sender: TObject);
+begin
+  lbEdit.CaretPos:= Point(Length(lbEdit.Text), Length(lbEdit.Text));
 end;
 
 class function TFormEditText.Execute(const ACaption, ALabel, AStatus: String;
