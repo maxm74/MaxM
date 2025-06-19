@@ -54,6 +54,10 @@ type
     function Del(const aData: T): Boolean; stdcall;
   end;
 
+  TOpenArrayString = class(specialize TOpenArray<String>);
+  IOpenArrayStringR = interface(specialize IOpenArrayR<String>) end;
+  IOpenArrayStringW = interface(specialize IOpenArrayW<String>) end;
+
   { TOpenArrayList }
   generic TOpenArrayList<T, K> = class(TNoRefCountObject)
   type
@@ -113,6 +117,9 @@ type
     function PutByKey(const aKey: K; var aData: T): Boolean; stdcall;
     function CopyFrom(const ACount: DWord; const AArray: array of T): Boolean; stdcall;
   end;
+
+  TKeyString = type String;
+  TOpenArrayListString = class(specialize TOpenArrayList<String, TKeyString>);
 
 implementation
 
