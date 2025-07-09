@@ -5,17 +5,31 @@
 //***                                                                        ***
 //***                                                                        ***
 //******************************************************************************
-//  File        : MM_VCL_Compatibility.pas
+//  File        : MM_DelphiCompatibility.pas
 //
 //  Description : Implementation of Some functions not in FCL.
 //
 //******************************************************************************
 
-unit MM_VCL_Compatibility;
+unit MM_DelphiCompatibility;
 {$mode objfpc}
 {$H+}
 
 interface
+
+{$ifndef fpc}
+type
+{$ifdef CPUX64}
+  PtrInt = Int64;
+  PtrUInt = UInt64;
+{$else}
+  PtrInt = longint;
+  PtrUInt = Longword;
+{$endif}
+const
+  AllowDirectorySeparators : set of AnsiChar = ['\','/'];
+  DirectorySeparator = '\';
+{$endif}
 
 uses
   Classes, SysUtils;

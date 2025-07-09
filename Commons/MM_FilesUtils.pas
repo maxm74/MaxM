@@ -43,7 +43,7 @@ procedure DeleteFileOnPath(BasePath, AWildList:String; ARecursive :Boolean = Tru
 
 implementation
 
-uses Math, StrUtils, LazFileUtils, FileUtil, Masks;
+uses Math, StrUtils, FileUtil, Masks;
 
 function NaturalCompare(aList: TStringList; aIndex1, aIndex2: Integer): Integer;
 begin
@@ -308,8 +308,7 @@ begin
                     then DeleteFileOnPath(BasePath+fileInfo.Name+DirectorySeparator,
                                           AWildList, True);
                   end
-             else if CanDel
-                  then LazFileUtils.DeleteFileUTF8(BasePath+fileInfo.Name);
+             else if CanDel then DeleteFile(BasePath+fileInfo.Name);
         end;
         err :=FindNext(fileInfo);
    end;

@@ -1,0 +1,122 @@
+object MMForm_Progress: TMMForm_Progress
+  Left = 420
+  Height = 220
+  Top = 216
+  Width = 396
+  Anchors = [akTop, akLeft, akRight]
+  AutoSize = True
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'MMForm_Progress'
+  ClientHeight = 220
+  ClientWidth = 396
+  DesignTimePPI = 120
+  FormStyle = fsStayOnTop
+  Position = poScreenCenter
+  OnCreate = FormCreate
+  object panelTotal: TPanel
+    Left = 0
+    Height = 90
+    Top = 0
+    Width = 396
+    Align = alTop
+    BevelOuter = bvNone
+    ClientHeight = 90
+    ClientWidth = 396
+    TabOrder = 0
+    object capTotal: TLabel
+      Left = 12
+      Height = 20
+      Top = 24
+      Width = 33
+      Caption = 'Total'
+    end
+    object labTotal: TLabel
+      Left = 12
+      Height = 20
+      Top = 2
+      Width = 40
+      Caption = 'TotalL'
+    end
+    object progressTotal: TBGRAFlashProgressBar
+      Left = 8
+      Height = 34
+      Top = 48
+      Width = 380
+      CaptionShowPercent = True
+      CaptionPercentTimerFormat = 'nn:ss.zzz'
+      MaxValue = 100
+      MaxYValue = 100
+      Value = 30
+      ValueSub = 10
+      RandSeed = 0
+      BarColor = 14852966
+      BarColorSub = 1044720
+      BackgroundColor = clNone
+      BackgroundRandomizeMinIntensity = 4000
+      BackgroundRandomizeMaxIntensity = 5000
+      BackgroundRandomize = False
+      MarqueeBounce = 2
+    end
+  end
+  object panelCancel: TPanel
+    Left = 0
+    Height = 64
+    Top = 160
+    Width = 396
+    Align = alTop
+    BevelOuter = bvNone
+    ClientHeight = 64
+    ClientWidth = 396
+    TabOrder = 1
+    object btCancel: TBitBtn
+      Left = 141
+      Height = 42
+      Top = 12
+      Width = 110
+      Anchors = [akRight, akBottom]
+      DefaultCaption = True
+      Kind = bkCancel
+      TabOrder = 0
+      OnClick = btCancelClick
+    end
+  end
+  object panelCurrent: TPanel
+    Left = 0
+    Height = 70
+    Top = 90
+    Width = 396
+    Align = alTop
+    BevelOuter = bvNone
+    ClientHeight = 70
+    ClientWidth = 396
+    TabOrder = 2
+    object capCurrent: TLabel
+      Left = 12
+      Height = 20
+      Top = 2
+      Width = 48
+      Caption = 'Current'
+    end
+    object progressCurrent: TBGRAFlashProgressBar
+      Left = 8
+      Height = 34
+      Top = 26
+      Width = 380
+      CaptionShowPercent = True
+      CaptionPercentTimerFormat = 'nn:ss.zzz'
+      MaxValue = 100
+      MaxYValue = 100
+      Value = 30
+      ValueSub = 10
+      RandSeed = 0
+      BarColor = 14852966
+      BarColorSub = 1044720
+      BackgroundColor = clNone
+      BackgroundRandomizeMinIntensity = 4000
+      BackgroundRandomizeMaxIntensity = 5000
+      BackgroundRandomize = False
+      MarqueeBounce = 2
+    end
+  end
+end

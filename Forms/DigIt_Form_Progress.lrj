@@ -1,0 +1,6 @@
+{"version":1,"strings":[
+{"hash":144583795,"name":"tdigit_progress.caption","sourcebytes":[68,105,103,73,116,95,80,114,111,103,114,101,115,115],"value":"DigIt_Progress"},
+{"hash":5991036,"name":"tdigit_progress.captotal.caption","sourcebytes":[84,111,116,97,108],"value":"Total"},
+{"hash":95856652,"name":"tdigit_progress.labtotal.caption","sourcebytes":[84,111,116,97,108,76],"value":"TotalL"},
+{"hash":180980756,"name":"tdigit_progress.capcurrent.caption","sourcebytes":[67,117,114,114,101,110,116],"value":"Current"}
+]}

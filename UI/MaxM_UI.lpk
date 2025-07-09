@@ -12,7 +12,8 @@
       </SearchPaths>
     </CompilerOptions>
     <Description Value="MaxM Controls and Components for User Interface"/>
-    <Version Minor="2"/>
+    <License Value="GPL 3.0"/>
+    <Version Minor="4"/>
     <Files Count="10">
       <Item1>
         <Filename Value="MM_UI_Highlighter.pas"/>

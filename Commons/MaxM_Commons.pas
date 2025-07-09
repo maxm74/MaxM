@@ -8,11 +8,10 @@ unit MaxM_Commons;
 interface
 
 uses
-  MM_IniFiles, MM_StrUtils, MM_VCL_Compatibility, MM_DB_FirebirdUtils, 
-  MM_VariantsStringList, MM_DB_Utils, MM_Form_WorkProgress, MM_AsyncCall, 
-  MM_StringListList, MM_Form_DatasetDiff, MM_FilesUtils, MM_GeometricalUtils, 
-  MM_Form_Special_Chars, MM_Special_Chars, MM_Form_CharsGrid, syncipc, 
-  MM_OpenArrayList, MM_Form_EditText;
+  MM_IniFiles, MM_StrUtils, MM_DelphiCompatibility, MM_DB_FirebirdUtils, 
+  MM_VariantsStringList, MM_DB_Utils, MM_AsyncCall, MM_StringListList, 
+  MM_FilesUtils, MM_GeometricalUtils, syncipc, MM_OpenArrayList, 
+  MM_Special_Chars, MM_Interface_Progress, MM_Interface_MessageDlg;
 
 implementation
 

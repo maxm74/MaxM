@@ -24,11 +24,11 @@ procedure FreeAsync;
 
 implementation
 
-uses ExtCtrls;
+uses fptimer;
 
 type
     { TAsyncComp }
-    TAsyncComp = class(TTimer)
+    TAsyncComp = class(TFPTimer)
     public
       SyncMtd :TNotifyEvent;
       SyncMtd_Sender: TObject;

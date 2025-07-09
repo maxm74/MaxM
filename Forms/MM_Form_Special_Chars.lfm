@@ -1,36 +1,36 @@
 object FormSpecialChars: TFormSpecialChars
   Left = 265
-  Height = 384
+  Height = 480
   Top = 101
-  Width = 504
+  Width = 630
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'Caratteri Speciali...'
-  ClientHeight = 384
-  ClientWidth = 504
+  ClientHeight = 480
+  ClientWidth = 630
+  DesignTimePPI = 120
+  Position = poScreenCenter
+  LCLVersion = '4.99.0.0'
   OnCreate = FormCreate
   OnShow = FormShow
-  Position = poScreenCenter
-  LCLVersion = '1.7'
   object sgChars: TStringGrid
     Left = 0
-    Height = 240
-    Top = 32
-    Width = 416
+    Height = 300
+    Top = 40
+    Width = 520
     AutoEdit = False
     ColCount = 16
-    DefaultColWidth = 24
-    DefaultRowHeight = 24
+    DefaultColWidth = 30
+    DefaultRowHeight = 30
     ExtendedSelect = False
     FixedCols = 0
     FixedRows = 0
     Flat = True
-    Font.Height = -19
+    Font.Height = -24
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goSmoothScroll]
     ParentFont = False
     RowCount = 1
     TabOrder = 0
-    TitleFont.Height = -19
     OnSelection = sgCharsSelection
     OnSelectCell = sgCharsSelectCell
   end
@@ -38,34 +38,28 @@ object FormSpecialChars: TFormSpecialChars
     Left = 0
     Height = 21
     Top = 0
-    Width = 416
+    Width = 520
     ItemHeight = 13
-    OnChange = cbInsiemiChange
     Style = csDropDownList
     TabOrder = 1
+    OnChange = cbInsiemiChange
   end
   object lbCurChar: TLabel
-    Left = 424
+    Left = 530
     Height = 77
-    Top = 33
+    Top = 41
     Width = 37
     Caption = 'X'
-    Font.Height = -64
+    Font.Height = -80
     ParentColor = False
     ParentFont = False
   end
   object edHex: TLabeledEdit
-    Left = 424
+    Left = 530
     Height = 21
-    Top = 200
-    Width = 80
-    EditLabel.AnchorSideLeft.Control = edHex
-    EditLabel.AnchorSideRight.Control = edHex
-    EditLabel.AnchorSideRight.Side = asrBottom
-    EditLabel.AnchorSideBottom.Control = edHex
-    EditLabel.Left = 424
+    Top = 250
+    Width = 100
     EditLabel.Height = 13
-    EditLabel.Top = 184
     EditLabel.Width = 80
     EditLabel.Caption = 'Esadecimale :'
     EditLabel.ParentColor = False
@@ -73,17 +67,11 @@ object FormSpecialChars: TFormSpecialChars
     TabOrder = 2
   end
   object edDec: TLabeledEdit
-    Left = 424
+    Left = 530
     Height = 21
-    Top = 248
-    Width = 80
-    EditLabel.AnchorSideLeft.Control = edDec
-    EditLabel.AnchorSideRight.Control = edDec
-    EditLabel.AnchorSideRight.Side = asrBottom
-    EditLabel.AnchorSideBottom.Control = edDec
-    EditLabel.Left = 424
+    Top = 310
+    Width = 100
     EditLabel.Height = 13
-    EditLabel.Top = 232
     EditLabel.Width = 80
     EditLabel.Caption = 'Decimale :'
     EditLabel.ParentColor = False
@@ -91,18 +79,11 @@ object FormSpecialChars: TFormSpecialChars
     TabOrder = 3
   end
   object edText: TLabeledEdit
-    Left = 64
+    Left = 80
     Height = 21
-    Top = 280
-    Width = 440
-    EditLabel.AnchorSideTop.Control = edText
-    EditLabel.AnchorSideTop.Side = asrCenter
-    EditLabel.AnchorSideRight.Control = edText
-    EditLabel.AnchorSideBottom.Control = edText
-    EditLabel.AnchorSideBottom.Side = asrBottom
-    EditLabel.Left = 11
+    Top = 350
+    Width = 550
     EditLabel.Height = 13
-    EditLabel.Top = 284
     EditLabel.Width = 50
     EditLabel.Caption = 'Caratteri :'
     EditLabel.ParentColor = False
@@ -114,6 +95,7 @@ object FormSpecialChars: TFormSpecialChars
     Height = 34
     Top = 344
     Width = 492
+    BorderSpacing.Around = 8
     OKButton.Name = 'OKButton'
     OKButton.DefaultCaption = True
     HelpButton.Name = 'HelpButton'
@@ -126,9 +108,9 @@ object FormSpecialChars: TFormSpecialChars
     ShowButtons = [pbOK, pbCancel]
   end
   object btInsert: TBitBtn
-    Left = 413
+    Left = 411
     Height = 26
-    Top = 305
+    Top = 381
     Width = 85
     Anchors = [akTop, akRight]
     AutoSize = True
@@ -169,7 +151,7 @@ object FormSpecialChars: TFormSpecialChars
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00
     }
-    OnClick = btInsertClick
     TabOrder = 6
+    OnClick = btInsertClick
   end
 end

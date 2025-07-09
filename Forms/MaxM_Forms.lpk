@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <Name Value="MaxM_Forms"/>
+    <Author Value="MaxM"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <SearchPaths>
+        <OtherUnitFiles Value="."/>
+        <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+    </CompilerOptions>
+    <Description Value="MaxM Common Forms"/>
+    <License Value="GPL 3.0"/>
+    <Version Minor="4"/>
+    <Files Count="7">
+      <Item1>
+        <Filename Value="MM_Form_WorkProgress.pas"/>
+        <UnitName Value="MM_Form_WorkProgress"/>
+      </Item1>
+      <Item2>
+        <Filename Value="MM_Form_DatasetDiff.pas"/>
+        <UnitName Value="MM_Form_DatasetDiff"/>
+      </Item2>
+      <Item3>
+        <Filename Value="MM_Form_Special_Chars.pas"/>
+        <UnitName Value="MM_Form_Special_Chars"/>
+      </Item3>
+      <Item4>
+        <Filename Value="MM_Form_CharsGrid.pas"/>
+        <UnitName Value="MM_Form_CharsGrid"/>
+      </Item4>
+      <Item5>
+        <Filename Value="MM_Form_EditText.pas"/>
+        <UnitName Value="MM_Form_EditText"/>
+      </Item5>
+      <Item6>
+        <Filename Value="MM_Form_Progress.pas"/>
+        <UnitName Value="MM_Form_Progress"/>
+      </Item6>
+      <Item7>
+        <Filename Value="MM_MessageDlg_Impl_Dialogs.pas"/>
+        <UnitName Value="MM_MessageDlg_Impl_Dialogs"/>
+      </Item7>
+    </Files>
+    <CompatibilityMode Value="True"/>
+    <i18n>
+      <EnableI18N Value="True"/>
+      <OutDir Value="languages"/>
+      <EnableI18NForLFM Value="True"/>
+    </i18n>
+    <RequiredPkgs Count="4">
+      <Item1>
+        <PackageName Value="bgracontrols"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="MaxM_Commons"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="LCL"/>
+      </Item3>
+      <Item4>
+        <PackageName Value="FCL"/>
+      </Item4>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <CustomOptions Items="ExternHelp" Version="2">
+      <_ExternHelp Items="Count"/>
+    </CustomOptions>
+  </Package>
+</CONFIG>

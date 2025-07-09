@@ -1,0 +1,6 @@
+{"version":1,"strings":[
+{"hash":104270531,"name":"tmmform_progress.caption","sourcebytes":[77,77,70,111,114,109,95,80,114,111,103,114,101,115,115],"value":"MMForm_Progress"},
+{"hash":5991036,"name":"tmmform_progress.captotal.caption","sourcebytes":[84,111,116,97,108],"value":"Total"},
+{"hash":95856652,"name":"tmmform_progress.labtotal.caption","sourcebytes":[84,111,116,97,108,76],"value":"TotalL"},
+{"hash":180980756,"name":"tmmform_progress.capcurrent.caption","sourcebytes":[67,117,114,114,101,110,116],"value":"Current"}
+]}

@@ -4,7 +4,7 @@ unit MM_UI_EnumFiles;
 
 interface
 uses
-  SysUtils, Classes, MM_VCL_Compatibility, Menus, Masks, StrUtils;
+  SysUtils, Classes, MM_DelphiCompatibility, Menus, Masks, StrUtils;
 
 type
   TMM_UI_EnumFilesItemClick =procedure(Sender :TObject; Item:TMenuItem; FileName :String) of object;

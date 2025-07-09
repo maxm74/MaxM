@@ -10,10 +10,10 @@
         <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
     </CompilerOptions>
-    <Description Value="MaxM Common Units and Forms"/>
+    <Description Value="MaxM Common Units"/>
     <License Value="GPL 3.0"/>
-    <Version Minor="3"/>
-    <Files Count="18">
+    <Version Minor="4"/>
+    <Files Count="15">
       <Item1>
         <Filename Value="MM_IniFiles.pas"/>
         <UnitName Value="MM_IniFiles"/>
@@ -23,8 +23,8 @@
         <UnitName Value="MM_StrUtils"/>
       </Item2>
       <Item3>
-        <Filename Value="MM_VCL_Compatibility.pas"/>
-        <UnitName Value="MM_VCL_Compatibility"/>
+        <Filename Value="MM_DelphiCompatibility.pas"/>
+        <UnitName Value="MM_DelphiCompatibility"/>
       </Item3>
       <Item4>
         <Filename Value="MM_DB_FirebirdUtils.pas"/>
@@ -39,73 +39,54 @@
         <UnitName Value="MM_DB_Utils"/>
       </Item6>
       <Item7>
-        <Filename Value="MM_Form_WorkProgress.pas"/>
-        <UnitName Value="MM_Form_WorkProgress"/>
-      </Item7>
-      <Item8>
         <Filename Value="MM_AsyncCall.pas"/>
         <UnitName Value="MM_AsyncCall"/>
-      </Item8>
-      <Item9>
+      </Item7>
+      <Item8>
         <Filename Value="MM_StringListList.pas"/>
         <UnitName Value="MM_StringListList"/>
-      </Item9>
-      <Item10>
-        <Filename Value="MM_Form_DatasetDiff.pas"/>
-        <UnitName Value="MM_Form_DatasetDiff"/>
-      </Item10>
-      <Item11>
+      </Item8>
+      <Item9>
         <Filename Value="MM_FilesUtils.pas"/>
         <UnitName Value="MM_FilesUtils"/>
-      </Item11>
-      <Item12>
+      </Item9>
+      <Item10>
         <Filename Value="MM_GeometricalUtils.pas"/>
         <UnitName Value="MM_GeometricalUtils"/>
-      </Item12>
-      <Item13>
-        <Filename Value="MM_Form_Special_Chars.pas"/>
-        <UnitName Value="MM_Form_Special_Chars"/>
-      </Item13>
-      <Item14>
-        <Filename Value="MM_Special_Chars.pas"/>
-        <UnitName Value="MM_Special_Chars"/>
-      </Item14>
-      <Item15>
-        <Filename Value="MM_Form_CharsGrid.pas"/>
-        <UnitName Value="MM_Form_CharsGrid"/>
-      </Item15>
-      <Item16>
+      </Item10>
+      <Item11>
         <Filename Value="syncipc.pp"/>
         <UnitName Value="syncipc"/>
-      </Item16>
-      <Item17>
+      </Item11>
+      <Item12>
         <Filename Value="MM_OpenArrayList.pas"/>
         <UnitName Value="MM_OpenArrayList"/>
-      </Item17>
-      <Item18>
-        <Filename Value="MM_Form_EditText.pas"/>
-        <UnitName Value="MM_Form_EditText"/>
-      </Item18>
+      </Item12>
+      <Item13>
+        <Filename Value="MM_Special_Chars.pas"/>
+        <UnitName Value="MM_Special_Chars"/>
+      </Item13>
+      <Item14>
+        <Filename Value="MM_Interface_Progress.pas"/>
+        <UnitName Value="MM_Interface_Progress"/>
+      </Item14>
+      <Item15>
+        <Filename Value="MM_Interface_MessageDlg.pas"/>
+        <UnitName Value="MM_Interface_MessageDlg"/>
+      </Item15>
     </Files>
     <CompatibilityMode Value="True"/>
     <i18n>
-      <EnableI18N Value="True"/>
       <OutDir Value="languages"/>
       <EnableI18NForLFM Value="True"/>
     </i18n>
-    <RequiredPkgs Count="4">
+    <RequiredPkgs Count="2">
       <Item1>
-        <PackageName Value="LCL"/>
+        <PackageName Value="LazUtils"/>
       </Item1>
       <Item2>
-        <PackageName Value="LCLBase"/>
-      </Item2>
-      <Item3>
-        <PackageName Value="LazUtils"/>
-      </Item3>
-      <Item4>
         <PackageName Value="FCL"/>
-      </Item4>
+      </Item2>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>
