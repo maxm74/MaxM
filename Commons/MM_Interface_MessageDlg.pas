@@ -17,6 +17,17 @@ interface
 
 uses System.UITypes;
 
+type
+  // Aliases for types in UITypes.
+  TMsgDlgType    = System.UITypes.TMsgDlgType;
+  TMsgDlgBtn     = System.UITypes.TMsgDlgBtn;
+  TMsgDlgButtons = System.UITypes.TMsgDlgButtons;
+
+  TModalResult = System.UITypes.TModalResult;
+  PModalResult = System.UITypes.PModalResult;
+
+  TCursor = System.UITypes.TCursor;
+
 const
   // Aliases for enum values in UITypes.
   mtWarning      = System.UITypes.TMsgDlgType.mtWarning;
@@ -63,14 +74,42 @@ const
   {$ENDIF}
   mrLast = System.UITypes.mrLast;
 
-type
-  // Aliases for types in UITypes.
-  TMsgDlgType    = System.UITypes.TMsgDlgType;
-  TMsgDlgBtn     = System.UITypes.TMsgDlgBtn;
-  TMsgDlgButtons = System.UITypes.TMsgDlgButtons;
-  TModalResult = System.UITypes.TModalResult;
-  PModalResult = System.UITypes.PModalResult;
+  // Cursor constants
+  crHigh        = TCursor(0);
+  crDefault     = TCursor(0);
+  crNone        = TCursor(-1);
+  crArrow       = TCursor(-2);
+  crCross       = TCursor(-3);
+  crIBeam       = TCursor(-4);
+  crSize        = TCursor(-22);
+  crSizeNESW    = TCursor(-6); // diagonal north east - south west
+  crSizeNS      = TCursor(-7);
+  crSizeNWSE    = TCursor(-8);
+  crSizeWE      = TCursor(-9);
+  crSizeNW      = TCursor(-23);
+  crSizeN       = TCursor(-24);
+  crSizeNE      = TCursor(-25);
+  crSizeW       = TCursor(-26);
+  crSizeE       = TCursor(-27);
+  crSizeSW      = TCursor(-28);
+  crSizeS       = TCursor(-29);
+  crSizeSE      = TCursor(-30);
+  crUpArrow     = TCursor(-10);
+  crHourGlass   = TCursor(-11);
+  crDrag        = TCursor(-12);
+  crNoDrop      = TCursor(-13);
+  crHSplit      = TCursor(-14);
+  crVSplit      = TCursor(-15);
+  crMultiDrag   = TCursor(-16);
+  crSQLWait     = TCursor(-17);
+  crNo          = TCursor(-18);
+  crAppStart    = TCursor(-19);
+  crHelp        = TCursor(-20);
+  crHandPoint   = TCursor(-21);
+  crSizeAll     = TCursor(-22);
+  crLow         = TCursor(-30);
 
+type
   IMM_MessageDlg = interface
   ['{D101B01A-FAD0-C666-CADE-2344BF2350B2}']
     function MessageDlg(const aMsg: PChar; DlgType: TMsgDlgType;
@@ -87,6 +126,8 @@ type
                 Buttons: array of const; HelpCtx: Longint): TModalResult; stdcall; overload;
     function QuestionDlg(const aCaption, aMsg: PChar; DlgType: TMsgDlgType;
                 Buttons: array of const; const HelpKeyword: PChar): TModalResult; stdcall; overload;
+
+    procedure Cursor(ACursor: TCursor); stdcall;
   end;
 
 implementation

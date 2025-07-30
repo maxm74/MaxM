@@ -20,7 +20,6 @@ uses
   MM_Interface_MessageDlg;
 
 type
-
   { TMM_MessageDlg_Impl_Dialogs }
 
   TMM_MessageDlg_Impl_Dialogs = class(TNoRefCountObject, IMM_MessageDlg)
@@ -38,6 +37,8 @@ type
                 Buttons: array of const; HelpCtx: Longint): TModalResult; stdcall; overload;
     function QuestionDlg(const aCaption, aMsg: PChar; DlgType: TMsgDlgType;
                 Buttons: array of const; const HelpKeyword: PChar): TModalResult; stdcall; overload;
+
+    procedure Cursor(ACursor: TCursor); stdcall;
   end;
 
 var
@@ -45,50 +46,63 @@ var
 
 implementation
 
-uses Dialogs;
+uses Dialogs, Forms;
 
 { TMM_MessageDlg_Impl_Dialogs }
 
 function TMM_MessageDlg_Impl_Dialogs.MessageDlg(const aMsg: PChar; DlgType: TMsgDlgType;
                                                 Buttons: TMsgDlgButtons; HelpCtx: Longint): TModalResult; stdcall;
 begin
+  Screen.Cursor:= crDefault;
   Result:= Dialogs.MessageDlg(aMsg, DlgType, Buttons, HelpCtx);
 end;
 
 function TMM_MessageDlg_Impl_Dialogs.MessageDlg(const aCaption, aMsg: PChar; DlgType: TMsgDlgType;
                                                 Buttons: TMsgDlgButtons; HelpCtx: Longint): TModalResult; stdcall;
 begin
+  Screen.Cursor:= crDefault;
   Result:= Dialogs.MessageDlg(aCaption, aMsg, DlgType, Buttons, HelpCtx);
 end;
 
 function TMM_MessageDlg_Impl_Dialogs.MessageDlg(const aCaption, aMsg: PChar; DlgType: TMsgDlgType;
                                                 Buttons: TMsgDlgButtons; HelpCtx: Longint; DefaultButton: TMsgDlgBtn): TModalResult; stdcall;
 begin
+  Screen.Cursor:= crDefault;
   Result:= Dialogs.MessageDlg(aCaption, aMsg, DlgType, Buttons, HelpCtx, DefaultButton);
 end;
 
 function TMM_MessageDlg_Impl_Dialogs.MessageDlg(const aMsg: PChar; DlgType: TMsgDlgType;
                                                 Buttons: TMsgDlgButtons; HelpCtx: Longint; DefaultButton: TMsgDlgBtn): TModalResult; stdcall;
 begin
+  Screen.Cursor:= crDefault;
   Result:= Dialogs.MessageDlg(aMsg, DlgType, Buttons, HelpCtx, DefaultButton);
 end;
 
 function TMM_MessageDlg_Impl_Dialogs.MessageDlg(const aCaption, aMsg: PChar; DlgType: TMsgDlgType;
                                                 Buttons: TMsgDlgButtons; const HelpKeyword: PChar): TModalResult; stdcall;
 begin
+  Screen.Cursor:= crDefault;
   Result:= Dialogs.MessageDlg(aCaption, aMsg, DlgType, Buttons, HelpKeyword);
 end;
 
 function TMM_MessageDlg_Impl_Dialogs.QuestionDlg(const aCaption, aMsg: PChar; DlgType: TMsgDlgType;
                                                 Buttons: array of const; HelpCtx: Longint): TModalResult; stdcall;
 begin
+  Screen.Cursor:= crDefault;
   Result:= Dialogs.QuestionDlg(aCaption, aMsg, DlgType, Buttons, HelpCtx);
 end;
 
 function TMM_MessageDlg_Impl_Dialogs.QuestionDlg(const aCaption, aMsg: PChar; DlgType: TMsgDlgType;
                                                 Buttons: array of const; const HelpKeyword: PChar): TModalResult; stdcall;
 begin
+  Screen.Cursor:= crDefault;
   Result:= Dialogs.QuestionDlg(aCaption, aMsg, DlgType, Buttons, HelpKeyword);
+end;
+
+procedure TMM_MessageDlg_Impl_Dialogs.Cursor(ACursor: TCursor); stdcall;
+begin
+  Screen.Cursor:= crDefault;
+  Screen.Cursor:= ACursor;
 end;
 
 end.
