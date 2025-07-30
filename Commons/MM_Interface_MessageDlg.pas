@@ -26,7 +26,7 @@ type
   TModalResult = System.UITypes.TModalResult;
   PModalResult = System.UITypes.PModalResult;
 
-  TCursor = System.UITypes.TCursor;
+  TCursor = -32768..32767;
 
 const
   // Aliases for enum values in UITypes.
