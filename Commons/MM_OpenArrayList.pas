@@ -13,7 +13,8 @@ type
   protected
     rList: array of T;
 
-    function Get(Index: DWord) : T; virtual; overload;
+    function GetByIndex(aIndex: DWord) : T; virtual;
+    procedure PutByIndex(const aIndex: DWord; aData: T); virtual;
 
     function FreeElement(var aData: T): Boolean; virtual;
     function CompData(aData1, aData2: T): Integer; virtual;  //0 = , -1 AData1 < AData2, 1 AData1 > AData2
@@ -35,11 +36,12 @@ type
     function Find(const aData: T): Integer; virtual;
 
     function GetCount: DWord; virtual; stdcall;
-    function Get(const aIndex: DWord; out aData: T): Boolean; virtual; overload; stdcall;
+    function Get(const aIndex: DWord; out aData: T): Boolean; virtual; overload;
+    function Put(const aIndex: DWord; const aData: T): Boolean; virtual; overload;
 
     property Count: DWord read GetCount;
 
-    property Data[const aIndex: DWord]: T read Get; default;
+    property Data[const aIndex: DWord]: T read GetByIndex write PutByIndex; default;
   end;
 
   generic IOpenArrayR<T> = interface
@@ -96,8 +98,8 @@ type
     function Find(const aData: T): Integer; virtual;
 
     function GetCount: DWord; virtual; stdcall;
-    function Get(const aIndex: DWord; out aData: T): Boolean; virtual; overload; stdcall;
-    function GetByKey(const aKey: K; out aData: T): Boolean; virtual; stdcall;
+    function Get(const aIndex: DWord; out aData: T): Boolean; virtual; overload;
+    function GetByKey(const aKey: K; out aData: T): Boolean; virtual;
 
     property Count: DWord read GetCount;
 
@@ -127,18 +129,35 @@ uses SysConst;
 
 { TOpenArray }
 
-function TOpenArray.Get(Index: DWord): T;
+function TOpenArray.GetByIndex(aIndex: DWord): T;
 begin
-  if (Index < Length(rList))
-  then Result:= rList[Index]
-  else raise EListError.Create(Format(SListIndexError, [Index]));
+  if (aIndex < Length(rList))
+  then Result:= rList[aIndex]
+  else raise EListError.Create(Format(SListIndexError, [aIndex]));
 end;
 
-function TOpenArray.Get(const aIndex: DWord; out aData: T): Boolean; stdcall;
+procedure TOpenArray.PutByIndex(const aIndex: DWord; aData: T);
+begin
+  if (aIndex < Length(rList))
+  then rList[aIndex]:= aData
+  else raise EListError.Create(Format(SListIndexError, [aIndex]));
+end;
+
+function TOpenArray.Get(const aIndex: DWord; out aData: T): Boolean;
 begin
   aData:= Default(T);
   try
-     aData:= Get(aIndex);
+     aData:= GetByIndex(aIndex);
+     Result:=True;
+  except
+    Result:= False;
+  end;
+end;
+
+function TOpenArray.Put(const aIndex: DWord; const aData: T): Boolean;
+begin
+  try
+     PutByIndex(aIndex, aData);
      Result:=True;
   except
     Result:= False;
@@ -290,7 +309,7 @@ begin
   else raise EListError.Create(Format(SListIndexError, [Index]));
 end;
 
-function TOpenArrayList.Get(const aIndex: DWord; out aData: T): Boolean; stdcall;
+function TOpenArrayList.Get(const aIndex: DWord; out aData: T): Boolean;
 var
    resData: PData;
 
@@ -313,7 +332,7 @@ begin
   else Result:= Default(K);
 end;
 
-function TOpenArrayList.GetByKey(const aKey: K; out aData: T): Boolean; stdcall;
+function TOpenArrayList.GetByKey(const aKey: K; out aData: T): Boolean;
 var
    resData: PData;
 
