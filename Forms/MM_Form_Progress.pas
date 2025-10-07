@@ -57,7 +57,8 @@ type
 
     procedure SetEventCallBack(const AEventCallBack: IMM_ProgressCallback); stdcall;
 
-    procedure Show(const ACaption: PChar); stdcall;
+    procedure Show(const ACaption: PChar; CancelVisible: Boolean=True); stdcall;
+    procedure ShowWaiting(const ACaption: PChar; CancelVisible: Boolean=False); stdcall;
     procedure Hide; stdcall;
 
     //Useful functions
@@ -182,13 +183,35 @@ begin
   curEventCallBack:= AEventCallBack;
 end;
 
-procedure TMMForm_Progress.Show(const ACaption: PChar); stdcall;
+procedure TMMForm_Progress.Show(const ACaption: PChar; CancelVisible: Boolean=True); stdcall;
 begin
+  BorderIcons:= [biSystemMenu];
+  BorderStyle:= bsSingle;
+  panelCancel.Visible:= CancelVisible;
+
   rCancelled:= False;
   Caption:= ACaption;
   capTotal.Caption:= '';
   labTotal.Caption:= '';
   capCurrent.Caption:= '';
+  Visible:= True;
+  Application.ProcessMessages;
+end;
+
+procedure TMMForm_Progress.ShowWaiting(const ACaption: PChar; CancelVisible: Boolean=False); stdcall;
+begin
+  BorderIcons:= [];
+  BorderStyle:= bsNone;
+  panelCancel.Visible:= CancelVisible;
+  progressTotal.Style:= pbstMarquee;
+  progressTotal.MinValue:= 0;
+  progressTotal.MaxValue:= 100;
+  progressTotal.Value:= 0;
+  panelCurrent.Visible:= False;
+
+  rCancelled:= False;
+  capTotal.Caption:= '';
+  labTotal.Caption:= ACaption;
   Visible:= True;
   Application.ProcessMessages;
 end;

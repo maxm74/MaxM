@@ -38,7 +38,8 @@ type
 
     procedure SetEventCallBack(const AEventCallBack: IMM_ProgressCallback); stdcall;
 
-    procedure Show(const ACaption: PChar); stdcall;
+    procedure Show(const ACaption: PChar; CancelVisible: Boolean=True); stdcall;
+    procedure ShowWaiting(const ACaption: PChar; CancelVisible: Boolean=False); stdcall;
     procedure Hide; stdcall;
   end;
 
