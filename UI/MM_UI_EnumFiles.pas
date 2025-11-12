@@ -7,21 +7,22 @@ uses
   SysUtils, Classes, MM_DelphiCompatibility, Menus, Masks, StrUtils;
 
 type
-  TMM_UI_EnumFilesItemClick =procedure(Sender :TObject; Item:TMenuItem; FileName :String) of object;
+  TMM_UI_EnumFilesItemClick = procedure(Sender :TObject; Item:TMenuItem; FileName :String) of object;
 
-  TMM_UI_EnumFilesGetCaption =procedure(Sender :TObject; FileName :String; var theCaption :String; var CanAdd :Boolean) of object;
+  TMM_UI_EnumFilesOnCreateNode = function (Sender: TObject; AIndex: Integer; IsDir: Boolean; FileName: String; var ACaption :String): Boolean of object;
   TMM_UI_EnumFilesSorting =(soNone, soAscending, soDescending);
 
-  { TMM_UI_EnumFilesINMenuItem }
+  { TMM_UI_EnumFiles }
 
-  TMM_UI_EnumFilesINMenuItem = class(TComponent)
+  TMM_UI_EnumFiles = class(TComponent)
   private
     procedure SetImageIndex_Dir(AValue: Integer);
     procedure SetImageIndex_File(AValue: Integer);
+
   protected
+     BaseNode: TObject;
+
      rSorted: TMM_UI_EnumFilesSorting;
-     rMenuItem,
-     rSelectedItem: TMenuItem;
      rBasePath,
      //BaseDir,
      rSelectedPath,
@@ -33,54 +34,89 @@ type
      rImageIndex_Dir,
      rImageIndex_File: Integer;
      rOnItemClick: TMM_UI_EnumFilesItemClick;
-     rOnGetCaption: TMM_UI_EnumFilesGetCaption;
+     rOnCreateNode: TMM_UI_EnumFilesOnCreateNode;
      rOnUpdateDone: TNotifyEvent;
+     rUpdateAfterLoaded,
      rDeleteExtFromCaption,
-     rUpdateMenuAfterLoaded,
-     rCheckedStyle,
-     rRecursive,
-     rAutoMenuItemVisible: Boolean;
+     rRecursive: Boolean;
 
      procedure SetSorted(AValue: TMM_UI_EnumFilesSorting);
-     procedure SetMenuItem(Value: TMenuItem); virtual;
      procedure SetBasePath(Value: String); virtual;
      procedure SetBasePaths(Value: TStringList); virtual;
      procedure Loaded; override;
-     procedure UpdateMenuItem(theItem: TMenuItem; DefaultClick: Boolean); virtual;
+     procedure UpdateControl; virtual;
      procedure SetEnumFilter(Value: String); virtual;
      procedure SetEnumAttr(Value: Integer); virtual;
      procedure SetRecursive(Value: Boolean); virtual;
      procedure BuildABSPaths;
+
+     function CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject; virtual; abstract;
+     procedure DeleteNode(ANode: TObject); virtual;
+     procedure AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent); virtual;
+
   public
      constructor Create(AOwner: TComponent); override;
      destructor Destroy; override;
-     procedure UpdateOnBasePath(DefaultClick: Boolean);
-     procedure ItemClick(Sender: TObject); virtual;
-     function FindItem(Paths: array of String): TMenuItem;
-     procedure FillListByItem(AItem: TMenuItem; List: TStrings; ClearList: Boolean=True);
 
-     property SelectedItem: TMenuItem read rSelectedItem;
+     procedure UpdateOnBasePath(DefaultClick: Boolean);
+     procedure DoClick(Sender: TObject); virtual; abstract;
+
      property SelectedPath: String read rSelectedPath;
+
   published
-     property MenuItem: TMenuItem read rMenuItem write SetMenuItem;
      property BasePath: String read rBasePath write SetBasePath;
      property BasePaths: TStringList read rBasePaths write SetBasePaths;
      property EnumFilter: String read rEnumFilter write SetEnumFilter;
-     property DefaultItem: String read rDefaultItem write rDefaultItem;
      property EnumAttr: Integer read rEnumAttr write SetEnumAttr default faAnyfile;
      property DeleteExtFromCaption: Boolean read rDeleteExtFromCaption write rDeleteExtFromCaption;
-     property CheckedStyle: Boolean read  rCheckedStyle write rCheckedStyle;
-     property UpdateMenuAfterLoaded: Boolean read rUpdateMenuAfterLoaded write rUpdateMenuAfterLoaded default True;
+     property DefaultItem: String read rDefaultItem write rDefaultItem;
      property Recursive: Boolean read rRecursive write SetRecursive default False;
-     property AutoMenuItemVisible: Boolean read rAutoMenuItemVisible write rAutoMenuItemVisible;
      property Sorted: TMM_UI_EnumFilesSorting read rSorted write SetSorted default soNone;
+     property UpdateAfterLoaded: Boolean read rUpdateAfterLoaded write rUpdateAfterLoaded default True;
      property ImageIndex_File: Integer read rImageIndex_File write SetImageIndex_File default -1;
      property ImageIndex_Dir: Integer read rImageIndex_Dir write SetImageIndex_Dir default -1;
 
      //Events
-     property OnItemClick: TMM_UI_EnumFilesItemClick read rOnItemClick write rOnItemClick;
-     property OnGetCaption: TMM_UI_EnumFilesGetCaption read rOnGetCaption write rOnGetCaption;
+     property OnCreateNode: TMM_UI_EnumFilesOnCreateNode read rOnCreateNode write rOnCreateNode;
      property OnUpdateDone: TNotifyEvent read rOnUpdateDone write rOnUpdateDone;
+  end;
+
+  { TMM_UI_EnumFilesINMenuItem }
+
+  TMM_UI_EnumFilesINMenuItem = class(TMM_UI_EnumFiles)
+  protected
+     rMenuItem,
+     rSelectedItem: TMenuItem;
+     rCheckedStyle,
+     rDefaultClick,
+     rAutoMenuItemClear,
+     rAutoMenuItemVisible: Boolean;
+
+     procedure UpdateControl; override;
+
+     function CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject; override;
+     procedure AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent); override;
+
+     procedure SetMenuItem(Value: TMenuItem); virtual;
+
+  public
+     constructor Create(AOwner: TComponent); override;
+
+     procedure DoClick(Sender: TObject); override;
+     function FindItem(Paths: array of String): TMenuItem;
+     procedure FillListByItem(AItem: TMenuItem; List: TStrings; ClearList: Boolean=True);
+
+     property SelectedItem: TMenuItem read rSelectedItem;
+
+  published
+     property MenuItem: TMenuItem read rMenuItem write SetMenuItem;
+     property CheckedStyle: Boolean read  rCheckedStyle write rCheckedStyle;
+     property DefaultClick: Boolean read rDefaultClick write rDefaultClick;
+     property AutoMenuItemClear: Boolean read rAutoMenuItemClear write rAutoMenuItemClear;
+     property AutoMenuItemVisible: Boolean read rAutoMenuItemVisible write rAutoMenuItemVisible;
+
+     //Events
+     property OnItemClick: TMM_UI_EnumFilesItemClick read rOnItemClick write rOnItemClick;
   end;
 
 procedure Register;
@@ -96,24 +132,22 @@ begin
      RegisterComponents('MaxM_UI', [TMM_UI_EnumFilesINMenuItem]);
 end;
 
-constructor TMM_UI_EnumFilesINMenuItem.Create(AOwner: TComponent);
+constructor TMM_UI_EnumFiles.Create(AOwner: TComponent);
 begin
      inherited Create(AOwner);
-     rMenuItem :=Nil;
-     rSelectedItem :=Nil;
      rBasePaths :=TStringList.Create;
      rABSBasePaths:= TStringList.Create;
      rBasePaths.Add('.');
      rEnumFilter :='*.*';
      rEnumAttr :=faAnyFile;
      rRecursive :=False;
-     rUpdateMenuAfterLoaded :=True;
+     rUpdateAfterLoaded :=True;
      rImageIndex_Dir :=-1;
      rImageIndex_File :=-1;
      rBasePath:= '';
 end;
 
-destructor TMM_UI_EnumFilesINMenuItem.Destroy;
+destructor TMM_UI_EnumFiles.Destroy;
 begin
   rABSBasePaths.Free;
   rBasePaths.Free;
@@ -121,35 +155,18 @@ begin
   inherited Destroy;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.ItemClick(Sender: TObject);
+procedure TMM_UI_EnumFiles.Loaded;
 begin
-     rSelectedPath :=TMenuItem(Sender).Hint; //rItems.Values[TMenuItem(Sender).Tag];
-     if assigned(rOnItemClick)
-     then rOnItemClick(Self, TMenuItem(Sender), TMenuItem(Sender).Hint);
+  inherited Loaded;
 
-     if rCheckedStyle then
-     begin
-          //Avoid bugs on old fpc versions (solved by Me)
-          if (rSelectedItem<>Nil)
-          then rSelectedItem.Checked :=False;
-
-          rSelectedItem :=TMenuItem(Sender);
-          rSelectedItem.Checked :=True;
-      end;
+  if not(csDesigning in ComponentState) then
+  begin
+    BuildABSPaths;
+    if rUpdateAfterLoaded then UpdateControl;
+  end;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.Loaded;
-begin
-     inherited Loaded;
-
-     if not(csDesigning in ComponentState)
-     then BuildABSPaths;
-
-     if rUpdateMenuAfterLoaded
-     then UpdateMenuItem(rMenuItem, True);
-end;
-
-procedure TMM_UI_EnumFilesINMenuItem.BuildABSPaths;
+procedure TMM_UI_EnumFiles.BuildABSPaths;
 Var
    index :Integer;
    currValue :String;
@@ -201,255 +218,114 @@ begin
       end;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.SetBasePath(Value: String);
+procedure TMM_UI_EnumFiles.DeleteNode(ANode: TObject);
+begin
+  ANode.Free;
+end;
+
+procedure TMM_UI_EnumFiles.AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent);
+begin
+end;
+
+procedure TMM_UI_EnumFiles.SetBasePath(Value: String);
 begin
   if (rBasePath <> Value) then
   begin
     rBasePath:= Value;
     if not(csDesigning in ComponentState) and
-       not(csLoading in ComponentState)
-    then begin
-              BuildABSPaths;
-              UpdateMenuItem(rMenuItem, True);
-          end;
+       not(csLoading in ComponentState) then
+    begin
+      BuildABSPaths;
+      UpdateControl;
+    end;
   end;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.SetBasePaths(Value: TStringList);
+procedure TMM_UI_EnumFiles.SetBasePaths(Value: TStringList);
 begin
-     rBasePaths.Clear;
-     rBasePaths.AddStrings(Value);
-     if not(csDesigning in ComponentState) and
-        not(csLoading in ComponentState)
-     then begin
-               BuildABSPaths;
-               UpdateMenuItem(rMenuItem, True);
-           end;
+  rBasePaths.Clear;
+  rBasePaths.AddStrings(Value);
+  if not(csDesigning in ComponentState) and
+     not(csLoading in ComponentState) then
+  begin
+    BuildABSPaths;
+    UpdateControl;
+  end;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.SetEnumAttr(Value: Integer);
+procedure TMM_UI_EnumFiles.SetEnumAttr(Value: Integer);
 begin
-     if (Value<>rEnumAttr) then
-     begin
-          rEnumAttr :=Value;
+  if (Value<>rEnumAttr) then
+  begin
+    rEnumAttr :=Value;
 
-          if not(csDesigning in ComponentState) and
-             not(csLoading in ComponentState)
-          then UpdateMenuItem(rMenuItem, True);
-      end;
+    if not(csDesigning in ComponentState) and
+       not(csLoading in ComponentState)
+    then UpdateControl;
+  end;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.SetEnumFilter(Value: String);
+procedure TMM_UI_EnumFiles.SetEnumFilter(Value: String);
 begin
-     if (Value<>rEnumFilter) then
-     begin
-          rEnumFilter :=Value;
+  if (Value<>rEnumFilter) then
+  begin
+    rEnumFilter :=Value;
 
-          if not(csDesigning in ComponentState) and
-             not(csLoading in ComponentState)
-          then UpdateMenuItem(rMenuItem, True);
-      end;
+    if not(csDesigning in ComponentState) and
+       not(csLoading in ComponentState)
+    then UpdateControl;
+  end;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.SetImageIndex_File(AValue: Integer);
+procedure TMM_UI_EnumFiles.SetImageIndex_File(AValue: Integer);
 begin
   if (rImageIndex_File <> AValue)
   then rImageIndex_File := AValue;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.SetImageIndex_Dir(AValue: Integer);
+procedure TMM_UI_EnumFiles.SetImageIndex_Dir(AValue: Integer);
 begin
   if (rImageIndex_Dir <> AValue)
   then rImageIndex_Dir := AValue;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.SetSorted(AValue: TMM_UI_EnumFilesSorting);
+procedure TMM_UI_EnumFiles.SetSorted(AValue: TMM_UI_EnumFilesSorting);
 begin
   if (rSorted<>AValue) then
   begin
-       rSorted:=AValue;
+    rSorted:=AValue;
 
-       if not(csDesigning in ComponentState) and
-          not(csLoading in ComponentState)
-       then UpdateMenuItem(rMenuItem, True);
+    if not(csDesigning in ComponentState) and
+       not(csLoading in ComponentState)
+    then UpdateControl;
   end;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.SetMenuItem(Value: TMenuItem);
+procedure TMM_UI_EnumFiles.SetRecursive(Value: Boolean);
 begin
-     if (Value<>rMenuItem) then
-     begin
-          if not(csDesigning in ComponentState) and
-             not(csLoading in ComponentState)
-          then UpdateMenuItem(Value, True);
+  if (Value<>rRecursive) then
+  begin
+    rRecursive :=Value;
 
-          rMenuItem :=Value;
-      end;
+    if not(csDesigning in ComponentState) and
+       not(csLoading in ComponentState)
+    then UpdateControl;
+  end;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.SetRecursive(Value: Boolean);
-begin
-     if (Value<>rRecursive) then
-     begin
-          rRecursive :=Value;
+procedure TMM_UI_EnumFiles.UpdateControl;
+var
+   curNode: TObject;
+   Index,
+   baseIndex: Integer;
 
-          if not(csDesigning in ComponentState) and
-             not(csLoading in ComponentState)
-          then UpdateMenuItem(rMenuItem, True);
-      end;
-end;
-
-(*
-
-procedure TMM_UI_EnumFilesINMenuItem.UpdateMenuItem(theItem :TMenuItem;
-                                              DefaultClick :Boolean);
-Var
-   baseindex,
-   index      :Integer;
-
-   procedure SearchOnPath(xItem :TMenuItem; BaseDir :String);
-   var
-      fileInfo   :TSearchRec;
-      err        :Integer;
-      dupIndex   :Cardinal;
-      newItem,
-      dupItem    :TMenuItem;
-      theCaption,
-      insCaption,
-      theExt     :String;
-      isDefault,
-      CanAdd,
-      IsDir      :Boolean;
-
-   begin
-        if (BaseDir[Length(BaseDir)] in AllowDirectorySeparators)
-        then SetLength(BaseDir, Length(BaseDir)-1);
-
-        if DirectoryExists(BaseDir) then
-        begin
-             err :=FindFirst(BaseDir+DirectorySeparator+'*', faAnyFile, fileInfo);
-             while (err=0) do
-             begin
-                  if (fileInfo.Name[1] <> '.') then  //non è [.] o [..]
-                  begin
-                       theCaption :=ExtractFileName(fileInfo.Name);
-                       theExt     :=ExtractFileExt(fileInfo.Name);
-                       IsDir  :=((fileInfo.Attr and faDirectory)<>0);
-                       CanAdd :=((fileInfo.Attr and rEnumAttr) <>0) and
-                                 MatchesMask(fileInfo.Name, rEnumFilter);
-                       if IsDir and rRecursive
-                       then begin
-                                 dupItem :=xItem.Find(theCaption);
-                                 if (dupItem<>Nil)
-                                 then newItem :=dupItem
-                                 else newItem :=Menus.NewItem(theCaption, 0,
-                                                  False,
-                                                  true,
-                                                  Nil, 0,
-                                                  Self.Name+'_SUB'+IntToStr(index));
-                                 newItem.Tag :=-1;
-                                 SearchOnPath(newItem, BaseDir+DirectorySeparator+fileInfo.Name);
-                                 if newItem.Count>0
-                                 then begin
-                                           if (dupItem=Nil)
-                                           then xItem.Add(newItem);
-                                      end
-                                 else newItem.Free;
-                            end
-                       else if CanAdd then
-                            begin
-                                 if rDeleteExtFromCaption
-                                 then Delete(theCaption, pos(theExt, theCaption), 255);
-
-                                 if Assigned(rOnGetCaption)
-                                 then rOnGetCaption(Self, BaseDir+DirectorySeparator+fileInfo.Name,
-                                               theCaption, CanAdd);
-
-                                 if CanAdd then
-                                 begin
-                                      rFilesList.Add(BaseDir+DirectorySeparator+fileInfo.Name);
-                                      rCaptionsList.Add(StripHotKey(theCaption));
-
-                                      isDefault :=(rDefaultItem<>'') and
-                                             (Uppercase(theCaption)=Uppercase(rDefaultItem));
-                                      if (xItem<>Nil)
-                                      then begin
-                                                insCaption :=theCaption;
-                                                dupIndex :=2;
-                                                dupItem :=xItem.Find(insCaption);
-                                                while (dupItem<>Nil) do
-                                                begin
-                                                     insCaption :=theCaption+' ('+IntToStr(dupIndex)+')';
-                                                     dupItem :=xItem.Find(insCaption);
-                                                     inc(dupIndex);
-                                                end;
-                                                newItem :=Menus.NewItem(insCaption, 0,
-                                                        (rCheckedStyle and isDefault),
-                                                        true,
-                                                        @Self.ItemClick, 0,
-                                                        Self.Name+'_'+IntToStr(index));
-                                                newItem.Tag :=index;
-                                                newItem.Hint :=rFilesList.Strings[index];
-                                                xItem.Add(newItem);
-
-                                                if isDefault and DefaultClick
-                                                then Self.ItemClick(newItem);
-                                           end
-                                      else begin
-                                             if isDefault and DefaultClick and
-                                                Assigned(rOnItemClick)
-                                             then rOnItemClick(Self, Nil, rFilesList[index], index);
-                                           end;
-                                      inc(index);
-                                 end;
-                            end;
-                  end;
-                  err :=FindNext(fileInfo);
-             end;
-        end;
-   end;
-
-begin
-     rMenuItem :=theItem;
-     if rMenuItem<>Nil then
-     begin
-          rMenuItem.Clear;
-          if rAutoMenuItemVisible
-          then rMenuItem.Visible :=False;
-      end;
-     rFilesList.Clear;
-     rCaptionsList.Clear;
-     rSelectedPath :='';
-     index :=0;
-
-     for baseindex :=0 to rBasePaths.Count-1 do
-     begin
-          if (rBasePaths.Strings[baseindex]<>'')
-          then SearchOnPath(rMenuItem, rBasePaths.Strings[baseindex]);
-      end;
-     if Assigned(rOnUpdateDone)
-     then rOnUpdateDone(Self);
-
-     if rAutoMenuItemVisible and
-        (rMenuItem<>Nil) and (rMenuItem.Count>0)
-     then rMenuItem.Visible :=True;
-end;
-
-*)
-
-procedure TMM_UI_EnumFilesINMenuItem.UpdateMenuItem(theItem: TMenuItem; DefaultClick: Boolean);
-Var
-   baseindex,
-   index: Integer;
-
-   procedure SearchOnPath(xItem: TMenuItem; BaseDir: String);
+   function SearchOnPath(xNode: TObject; BaseDir: String): Integer;
    var
       fileInfo: TSearchRec;
       err, i, dupIndex: Integer;
-      newItem,
-      dupItem: TMenuItem;
+      newNode,
+      dupNode: TObject;
       theCaption,
-      insCaption,
       theExt: String;
       isDefault,
       CanAdd,
@@ -458,6 +334,8 @@ Var
       xItems_Dirs: TVariantsStringList;
 
    begin
+     Result:= 0;
+
         //if Last char is Separator, Delete it
         if (BaseDir[Length(BaseDir)] in AllowDirectorySeparators)
         then SetLength(BaseDir, Length(BaseDir)-1);
@@ -466,7 +344,9 @@ Var
         begin
           try
              xItems_Files :=TVariantsStringList.Create;
+             xItems_Files.OwnsObjects:= False;
              xItems_Dirs :=TVariantsStringList.Create;
+             xItems_Dirs.OwnsObjects:= False;
 
              xItems_Files.Duplicates :=dupAccept;
              if (rSorted <> soNone)
@@ -494,45 +374,44 @@ Var
                                  MatchesMask(fileInfo.Name, rEnumFilter);
                        if IsDir and rRecursive
                        then begin
-                                 ////If there is a duplicated Item (?) use It, else create new
-                                 if (xItems_Dirs.Find(theCaption, dupIndex))
-                                 then newItem :=TMenuItem(PtrInt(xItems_Dirs.Values[dupIndex]))
-                                 else begin
-                                           dupIndex :=-1;
-                                           inc(index);
-                                           newItem :=Menus.NewItem(theCaption, 0,
-                                                  False,
-                                                  true,
-                                                  Nil, 0,
-                                                  Self.Name+'_SUB'+IntToStr(index));
-                                       end;
-                                 newItem.Tag :=index; //-1;
-                                 newItem.ImageIndex :=rImageIndex_Dir;
-                                 newItem.Hint :=BaseDir+DirectorySeparator+fileInfo.Name+DirectorySeparator;
+                              //If there is a duplicated Item (?) use It or create new ??
 
-                                 SearchOnPath(newItem, BaseDir+DirectorySeparator+fileInfo.Name);
+                              //if (xItems_Dirs.Find(theCaption, dupIndex))
+                              //then newNode:= xItems_Dirs.Objects[dupIndex]
 
-                                 if (newItem.Count > 0)
-                                 then begin
-                                           if (dupIndex = -1)
-                                           then xItems_Dirs.Add(theCaption, PtrInt(newItem));
-                                      end
-                                 else begin //if there is no Items is an empty dir, delete it
-                                           dec(index);
-                                           newItem.Free;
-                                      end;
+                              inc(Index);
+                              CanAdd:= True;
+
+                              if Assigned(rOnCreateNode)
+                              then CanAdd:= rOnCreateNode(Self, Index, True, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
+
+                              if CanAdd
+                              then begin
+                                     newNode:= CreateNode(Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name+DirectorySeparator, theCaption);
+
+                                     if (SearchOnPath(newNode, BaseDir+DirectorySeparator+fileInfo.Name) > 0)
+                                     then xItems_Dirs.AddObject(theCaption, newNode)
+                                     else begin
+                                            DeleteNode(newNode); //if there is no Items is an empty dir, delete it
+                                            dec(Index);
+                                          end;
+                                   end
+                              else dec(Index);
                             end
                        else if CanAdd then
                             begin
-                                 if rDeleteExtFromCaption
-                                 then Delete(theCaption, pos(theExt, theCaption), 255);
+                              inc(Index);
 
-                                 if Assigned(rOnGetCaption)
-                                 then rOnGetCaption(Self, BaseDir+DirectorySeparator+fileInfo.Name,
-                                               theCaption, CanAdd);
+                              if Assigned(rOnCreateNode)
+                              then CanAdd:= rOnCreateNode(Self, Index, False, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
 
-                                 if CanAdd
-                                 then xItems_Files.Add(StripHotKey(theCaption), BaseDir+DirectorySeparator+fileInfo.Name);
+                              if CanAdd
+                              then begin
+                                     newNode:= CreateNode(Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name+DirectorySeparator, theCaption);
+
+                                     xItems_Files.AddObject(theCaption, newNode);
+                                   end
+                              else dec(Index);
                             end;
                   end;
                   err :=FindNext(fileInfo);
@@ -541,51 +420,25 @@ Var
 
              //Add First the SubDirectories
              for i :=0 to xItems_Dirs.Count-1 do
-             begin
-                  newItem :=TMenuItem(PtrInt(xItems_Dirs.Values[i]));
-                  xItem.Add(newItem);
-              end;
+               AddNode(xNode, xItems_Dirs.Objects[i], @Self.DoClick);
 
              //Next Add the Files
              for i :=0 to xItems_Files.Count-1 do
              begin
-                  inc(index);
-                  theCaption :=xItems_Files.Strings[i];
+               AddNode(xNode, xItems_Files.Objects[i], @Self.DoClick);
 
-                  isDefault :=(rDefaultItem<>'') and
-                              (Uppercase(theCaption)=Uppercase(rDefaultItem));
+               if isDefault then
+               begin
+                 (* rSelectedPath :=newItem.Hint;
 
-                  //If there is a duplicated Item add a Counter in Caption
-                  insCaption :=theCaption;
-                  dupIndex :=2;
-                  dupItem :=xItem.Find(insCaption);
-                  while (dupItem<>Nil) do
-                  begin
-                       insCaption :=theCaption+' ('+IntToStr(dupIndex)+')';
-                       dupItem :=xItem.Find(insCaption);
-                       inc(dupIndex);
-                  end;
-
-                  newItem :=Menus.NewItem(insCaption, 0,
-                                          (rCheckedStyle and isDefault),
-                                          True,
-                                          @Self.ItemClick, 0,
-                                          Self.Name+'_'+IntToStr(index));
-                  newItem.Tag :=index;
-                  newItem.ImageIndex :=rImageIndex_File;
-                  newItem.Hint :=String(xItems_Files.Values[i]);
-                  xItem.Add(newItem);
-
-                  if isDefault then
-                  begin
-                    rSelectedPath :=newItem.Hint;
-
-                    if DefaultClick and Assigned(rOnItemClick)
-                    then rOnItemClick(Self, newItem, newItem.Hint);
-                  end;
+                  if DefaultClick then DoClick(xItems_Dirs.Objects[i]);
+                  *)
+               end;
              end;
 
           finally
+            Result:= xItems_Dirs.Count+xItems_Files.Count;
+
             xItems_Files.Free;
             xItems_Dirs.Free;
           end;
@@ -593,33 +446,79 @@ Var
    end;
 
 begin
-     rMenuItem :=theItem;
-     if (rMenuItem <> Nil) then
-     begin
-          rMenuItem.Clear;
-          if rAutoMenuItemVisible
-          then rMenuItem.Visible :=False;
+  rSelectedPath:= '';
 
-          rSelectedPath :='';
-          index :=0;
+  for baseindex:=0 to rABSBasePaths.Count-1 do
+    if (rABSBasePaths.Strings[baseindex] <> '')
+    then SearchOnPath(BaseNode, rABSBasePaths.Strings[baseindex]);
 
-          for baseindex :=0 to rABSBasePaths.Count-1 do
-          begin
-               if (rABSBasePaths.Strings[baseindex] <> '')
-               then SearchOnPath(rMenuItem, rABSBasePaths.Strings[baseindex]);
-           end;
-
-          if Assigned(rOnUpdateDone)
-          then rOnUpdateDone(Self);
-
-          if rAutoMenuItemVisible and (rMenuItem.Count>0)
-          then rMenuItem.Visible :=True;
-      end;
+  if Assigned(rOnUpdateDone) then rOnUpdateDone(Self);
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.UpdateOnBasePath(DefaultClick: Boolean);
+procedure TMM_UI_EnumFiles.UpdateOnBasePath(DefaultClick: Boolean);
 begin
-     UpdateMenuItem(rMenuItem, DefaultClick);
+  UpdateControl;
+end;
+
+constructor TMM_UI_EnumFilesINMenuItem.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+
+  rMenuItem :=Nil;
+  rSelectedItem :=Nil;
+end;
+
+procedure TMM_UI_EnumFilesINMenuItem.UpdateControl;
+begin
+  BaseNode:= rMenuItem;
+
+  if rAutoMenuItemClear then rMenuItem.Clear;
+  if rAutoMenuItemVisible then rMenuItem.Visible:= False;
+
+  inherited UpdateControl;
+
+  if rAutoMenuItemVisible and (rMenuItem.Count > 0) then rMenuItem.Visible:= True;
+end;
+
+function TMM_UI_EnumFilesINMenuItem.CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject;
+begin
+  if IsDir
+  then Result:= Menus.NewItem(ACaption, 0, False, True, nil, 0, Self.Name+'_DIR_'+IntToStr(AIndex))
+  else Result:= Menus.NewItem(ACaption, 0, False, True, nil, 0, Self.Name+'_'+IntToStr(AIndex));
+
+  //I shouldn't use Hint but a Path list in base class
+  TMenuItem(Result).Hint:= FullPath;
+
+  if (rDefaultItem <> '') and (Uppercase(ACaption) = Uppercase(rDefaultItem)) then
+  begin
+    if rDefaultClick and Assigned(rOnItemClick)
+    then rOnItemClick(Self, TMenuItem(Result), FullPath);
+
+    rSelectedItem:= TMenuItem(Result);
+    rSelectedPath:= FullPath;
+    if rCheckedStyle then TMenuItem(Result).Checked:= True;
+  end;
+end;
+
+procedure TMM_UI_EnumFilesINMenuItem.AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent);
+begin
+  if (NewNode <> nil) and (NewNode is TMenuItem) then
+  begin
+    TMenuItem(NewNode).OnClick:= AOnClick;
+    if (ParentNode <> nil) and (ParentNode is TMenuItem) then TMenuItem(ParentNode).Add(TMenuItem(NewNode));
+  end;
+end;
+
+procedure TMM_UI_EnumFilesINMenuItem.SetMenuItem(Value: TMenuItem);
+begin
+  if (Value<>rMenuItem) then
+  begin
+    rMenuItem :=Value;
+
+    if not(csDesigning in ComponentState) and
+       not(csLoading in ComponentState)
+    then UpdateControl;
+  end;
 end;
 
 function TMM_UI_EnumFilesINMenuItem.FindItem(Paths: array of String): TMenuItem;
@@ -672,6 +571,18 @@ begin
                _FillListByItem(AItem.Items[i]);
            end;
       end;
+end;
+
+procedure TMM_UI_EnumFilesINMenuItem.DoClick(Sender: TObject);
+begin
+  if assigned(rOnItemClick)
+  then rOnItemClick(Self, TMenuItem(Sender), TMenuItem(Sender).Hint);
+
+  rSelectedItem:= TMenuItem(Sender);
+  //I shouldn't use Hint but a Path list in base class
+  rSelectedPath:= rSelectedItem.Hint;
+
+  if rCheckedStyle then rSelectedItem.Checked:= True;
 end;
 
 end.
