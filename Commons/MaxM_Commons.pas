@@ -11,7 +11,7 @@ uses
   MM_IniFiles, MM_StrUtils, MM_DelphiCompatibility, MM_DB_FirebirdUtils, 
   MM_VariantsStringList, MM_DB_Utils, MM_AsyncCall, MM_StringListList, 
   MM_FilesUtils, MM_GeometricalUtils, syncipc, MM_OpenArrayList, 
-  MM_Special_Chars, MM_Interface_Progress, MM_Interface_MessageDlg;
+  MM_Special_Chars, MM_Interface_Progress, MM_Interface_MessageDlg, MM_ShutDown;
 
 implementation
 

@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Menus, StdCtrls,
-  MM_UI_EnumFiles;
+  ComCtrls, MM_UI_EnumFiles;
 
 type
 
@@ -18,6 +18,7 @@ type
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
     MM_UI_EnumFilesINMenuItem: TMM_UI_EnumFilesINMenuItem;
+    TreeView1: TTreeView;
     procedure Button1Click(Sender: TObject);
     procedure MM_UI_EnumFilesINMenuItemItemClick(Sender: TObject;
       Item: TMenuItem; FileName: String);

@@ -13,7 +13,7 @@
     <Description Value="MaxM Common Units"/>
     <License Value="GPL 3.0"/>
     <Version Minor="4"/>
-    <Files Count="15">
+    <Files Count="16">
       <Item1>
         <Filename Value="MM_IniFiles.pas"/>
         <UnitName Value="MM_IniFiles"/>
@@ -74,6 +74,10 @@
         <Filename Value="MM_Interface_MessageDlg.pas"/>
         <UnitName Value="MM_Interface_MessageDlg"/>
       </Item15>
+      <Item16>
+        <Filename Value="MM_ShutDown.pas"/>
+        <UnitName Value="MM_ShutDown"/>
+      </Item16>
     </Files>
     <CompatibilityMode Value="True"/>
     <i18n>

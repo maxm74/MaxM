@@ -4,10 +4,10 @@ unit MM_UI_EnumFiles;
 
 interface
 uses
-  SysUtils, Classes, MM_DelphiCompatibility, Menus, Masks, StrUtils;
+  SysUtils, Classes, MM_DelphiCompatibility, Menus, Masks, StrUtils, ComCtrls;
 
 type
-  TMM_UI_EnumFilesItemClick = procedure(Sender :TObject; Item:TMenuItem; FileName :String) of object;
+  TMM_UI_EnumFilesNodeClick = procedure(Sender, Node :TObject; FileName :String) of object;
 
   TMM_UI_EnumFilesOnCreateNode = function (Sender: TObject; AIndex: Integer; IsDir: Boolean; FileName: String; var ACaption :String): Boolean of object;
   TMM_UI_EnumFilesSorting =(soNone, soAscending, soDescending);
@@ -33,11 +33,15 @@ type
      rEnumAttr,
      rImageIndex_Dir,
      rImageIndex_File: Integer;
-     rOnItemClick: TMM_UI_EnumFilesItemClick;
+     rOnNodeClick: TMM_UI_EnumFilesNodeClick;
      rOnCreateNode: TMM_UI_EnumFilesOnCreateNode;
      rOnUpdateDone: TNotifyEvent;
      rUpdateAfterLoaded,
      rDeleteExtFromCaption,
+     rAutoClear,
+     rAutoVisible,
+     rCheckedStyle,
+     rDefaultClick,
      rRecursive: Boolean;
 
      procedure SetSorted(AValue: TMM_UI_EnumFilesSorting);
@@ -64,8 +68,12 @@ type
      property SelectedPath: String read rSelectedPath;
 
   published
+     property AutoClear: Boolean read rAutoClear write rAutoClear;
+     property AutoVisible: Boolean read rAutoVisible write rAutoVisible;
      property BasePath: String read rBasePath write SetBasePath;
      property BasePaths: TStringList read rBasePaths write SetBasePaths;
+     property CheckedStyle: Boolean read  rCheckedStyle write rCheckedStyle;
+     property DefaultClick: Boolean read rDefaultClick write rDefaultClick;
      property EnumFilter: String read rEnumFilter write SetEnumFilter;
      property EnumAttr: Integer read rEnumAttr write SetEnumAttr default faAnyfile;
      property DeleteExtFromCaption: Boolean read rDeleteExtFromCaption write rDeleteExtFromCaption;
@@ -79,6 +87,7 @@ type
      //Events
      property OnCreateNode: TMM_UI_EnumFilesOnCreateNode read rOnCreateNode write rOnCreateNode;
      property OnUpdateDone: TNotifyEvent read rOnUpdateDone write rOnUpdateDone;
+     property OnNodeClick: TMM_UI_EnumFilesNodeClick read rOnNodeClick write rOnNodeClick;
   end;
 
   { TMM_UI_EnumFilesINMenuItem }
@@ -87,10 +96,6 @@ type
   protected
      rMenuItem,
      rSelectedItem: TMenuItem;
-     rCheckedStyle,
-     rDefaultClick,
-     rAutoMenuItemClear,
-     rAutoMenuItemVisible: Boolean;
 
      procedure UpdateControl; override;
 
@@ -110,13 +115,34 @@ type
 
   published
      property MenuItem: TMenuItem read rMenuItem write SetMenuItem;
-     property CheckedStyle: Boolean read  rCheckedStyle write rCheckedStyle;
-     property DefaultClick: Boolean read rDefaultClick write rDefaultClick;
-     property AutoMenuItemClear: Boolean read rAutoMenuItemClear write rAutoMenuItemClear;
-     property AutoMenuItemVisible: Boolean read rAutoMenuItemVisible write rAutoMenuItemVisible;
+  end;
 
-     //Events
-     property OnItemClick: TMM_UI_EnumFilesItemClick read rOnItemClick write rOnItemClick;
+  { TMM_UI_EnumFilesINTreeView }
+
+  TMM_UI_EnumFilesINTreeView = class(TMM_UI_EnumFiles)
+  protected
+     rTreeView: TCustomTreeView;
+     rParentNode,
+     rSelectedNode: TTreeNode;
+
+     procedure UpdateControl; override;
+
+     function CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject; override;
+     procedure AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent); override;
+
+     procedure SetTreeView(Value: TCustomTreeView); virtual;
+     procedure SetParentNode(Value: TTreeNode); virtual;
+
+  public
+     constructor Create(AOwner: TComponent); override;
+
+     procedure DoClick(Sender: TObject); override;
+
+     property SelectedNode: TTreeNode read rSelectedNode;
+
+  published
+     property TreeView: TCustomTreeView read rTreeView write SetTreeView;
+     property ParentNode: TTreeNode read rParentNode write SetParentNode;
   end;
 
 procedure Register;
@@ -464,20 +490,23 @@ constructor TMM_UI_EnumFilesINMenuItem.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
-  rMenuItem :=Nil;
-  rSelectedItem :=Nil;
+  rMenuItem:= nil;
+  rSelectedItem:= nil;
 end;
 
 procedure TMM_UI_EnumFilesINMenuItem.UpdateControl;
 begin
   BaseNode:= rMenuItem;
 
-  if rAutoMenuItemClear then rMenuItem.Clear;
-  if rAutoMenuItemVisible then rMenuItem.Visible:= False;
+  if (rMenuItem <> nil) then
+  begin
+    if rAutoClear then rMenuItem.Clear;
+    if rAutoVisible then rMenuItem.Visible:= False;
+  end;
 
   inherited UpdateControl;
 
-  if rAutoMenuItemVisible and (rMenuItem.Count > 0) then rMenuItem.Visible:= True;
+  if rAutoVisible and (rMenuItem <> nil) and (rMenuItem.Count > 0) then rMenuItem.Visible:= True;
 end;
 
 function TMM_UI_EnumFilesINMenuItem.CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject;
@@ -491,8 +520,8 @@ begin
 
   if (rDefaultItem <> '') and (Uppercase(ACaption) = Uppercase(rDefaultItem)) then
   begin
-    if rDefaultClick and Assigned(rOnItemClick)
-    then rOnItemClick(Self, TMenuItem(Result), FullPath);
+    if rDefaultClick and Assigned(rOnNodeClick)
+    then rOnNodeClick(Self, Result, FullPath);
 
     rSelectedItem:= TMenuItem(Result);
     rSelectedPath:= FullPath;
@@ -575,14 +604,78 @@ end;
 
 procedure TMM_UI_EnumFilesINMenuItem.DoClick(Sender: TObject);
 begin
-  if assigned(rOnItemClick)
-  then rOnItemClick(Self, TMenuItem(Sender), TMenuItem(Sender).Hint);
+  if assigned(rOnNodeClick)
+  then rOnNodeClick(Self, Sender, TMenuItem(Sender).Hint);
 
   rSelectedItem:= TMenuItem(Sender);
   //I shouldn't use Hint but a Path list in base class
   rSelectedPath:= rSelectedItem.Hint;
 
   if rCheckedStyle then rSelectedItem.Checked:= True;
+end;
+
+{ TMM_UI_EnumFilesINTreeView }
+
+procedure TMM_UI_EnumFilesINTreeView.UpdateControl;
+begin
+  BaseNode:= rParentNode;
+
+  if (rParentNode <> nil) then
+  begin
+    if rAutoClear then rParentNode.DeleteChildren;
+    if rAutoVisible then rParentNode.Visible:= False;
+  end;
+
+  inherited UpdateControl;
+
+  if rAutoVisible and (rParentNode <> nil) and (rParentNode.Count > 0) then rParentNode.Visible:= True;
+end;
+
+function TMM_UI_EnumFilesINTreeView.CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject;
+begin
+
+end;
+
+procedure TMM_UI_EnumFilesINTreeView.AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent);
+begin
+
+end;
+
+procedure TMM_UI_EnumFilesINTreeView.SetTreeView(Value: TCustomTreeView);
+begin
+
+end;
+
+procedure TMM_UI_EnumFilesINTreeView.SetParentNode(Value: TTreeNode);
+begin
+  if (Value<>rParentNode) then
+  begin
+    rParentNode:= Value;
+
+    if not(csDesigning in ComponentState) and
+       not(csLoading in ComponentState)
+    then UpdateControl;
+  end;
+end;
+
+constructor TMM_UI_EnumFilesINTreeView.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+
+  rParentNode:= nil;
+  rSelectedNode:= nil;
+end;
+
+procedure TMM_UI_EnumFilesINTreeView.DoClick(Sender: TObject);
+begin
+  if assigned(rOnNodeClick)
+  then rOnNodeClick(Self, Sender, TTreeNode(Sender).Data);
+
+  rSelectedNode:= TTreeNode(Sender);
+  //I shouldn't use Hint but a Path list in base class
+  rSelectedPath:= rSelectedNode.Data;
+
+  if rCheckedStyle then rSelectedNode.Checked:= True;
 end;
 
 end.
