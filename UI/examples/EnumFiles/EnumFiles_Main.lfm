@@ -16,7 +16,7 @@ object Form1: TForm1
     Width = 182
     Caption = 'Select an Item From Menu...'
   end
-  object lbSelectedPath: TLabel
+  object lbSelectedItem: TLabel
     Left = 23
     Height = 1
     Top = 75
@@ -29,6 +29,13 @@ object Form1: TForm1
     Width = 311
     TabOrder = 0
   end
+  object lbSelectedNode: TLabel
+    Left = 336
+    Height = 20
+    Top = 177
+    Width = 204
+    Caption = 'Select a Node From TreeView...'
+  end
   object MainMenu1: TMainMenu
     Left = 256
     Top = 88
@@ -37,19 +44,35 @@ object Form1: TForm1
     end
   end
   object MM_UI_EnumFilesINMenuItem: TMM_UI_EnumFilesINMenuItem
+    AutoClear = True
+    AutoVisible = True
     BasePaths.Strings = (
       '.\menuitems'
     )
+    CheckedStyle = False
+    DefaultClick = False
     EnumFilter = '*.ttt'
     DeleteExtFromCaption = True
     Recursive = True
+    OnNodeClick = MM_UI_EnumFilesINMenuItemItemClick
     MenuItem = MenuItem1
-    CheckedStyle = False
-    DefaultClick = False
-    AutoMenuItemClear = False
-    AutoMenuItemVisible = False
-    OnItemClick = MM_UI_EnumFilesINMenuItemItemClick
     Left = 256
     Top = 16
+  end
+  object MM_UI_EnumFilesINTreeView: TMM_UI_EnumFilesINTreeView
+    AutoClear = True
+    AutoVisible = True
+    BasePaths.Strings = (
+      '.\treeitems'
+    )
+    CheckedStyle = False
+    DefaultClick = False
+    EnumFilter = '*.ttt'
+    DeleteExtFromCaption = False
+    Recursive = True
+    OnNodeClick = MM_UI_EnumFilesINTreeViewNodeClick
+    TreeView = TreeView1
+    Left = 500
+    Top = 35
   end
 end

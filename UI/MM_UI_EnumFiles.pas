@@ -7,9 +7,20 @@ uses
   SysUtils, Classes, MM_DelphiCompatibility, Menus, Masks, StrUtils, ComCtrls;
 
 type
-  TMM_UI_EnumFilesNodeClick = procedure(Sender, Node :TObject; FileName :String) of object;
+  TMM_UI_EnumFiles = class;
 
-  TMM_UI_EnumFilesOnCreateNode = function (Sender: TObject; AIndex: Integer; IsDir: Boolean; FileName: String; var ACaption :String): Boolean of object;
+  TMM_UI_EnumFilesNode = class(TObject)
+     ParentNode: TMM_UI_EnumFilesNode;
+     Index: Integer;
+     IsDir: Boolean;
+     FullPath, Caption: String;
+     ComponentNode: TObject;
+  end;
+
+  TMM_UI_EnumFilesNodeClick = procedure(Sender: TMM_UI_EnumFiles; ComponentNode: TObject; Node: TMM_UI_EnumFilesNode) of object;
+
+  TMM_UI_EnumFilesOnCreateNode = function (Sender: TMM_UI_EnumFiles; ParentComponentNode: TObject;
+                                           AIndex: Integer; IsDir: Boolean; FileName: String; var ACaption :String): Boolean of object;
   TMM_UI_EnumFilesSorting =(soNone, soAscending, soDescending);
 
   { TMM_UI_EnumFiles }
@@ -20,14 +31,14 @@ type
     procedure SetImageIndex_File(AValue: Integer);
 
   protected
-     BaseNode: TObject;
+     Nodes: array of TMM_UI_EnumFilesNode;
 
      rSorted: TMM_UI_EnumFilesSorting;
      rBasePath,
      //BaseDir,
      rSelectedPath,
      rEnumFilter,
-     rDefaultItem: String;
+     rDefaultCaption: String;
      rABSBasePaths,
      rBasePaths: TStringList;
      rEnumAttr,
@@ -48,15 +59,20 @@ type
      procedure SetBasePath(Value: String); virtual;
      procedure SetBasePaths(Value: TStringList); virtual;
      procedure Loaded; override;
-     procedure UpdateControl; virtual;
+     procedure CreateNodes; virtual;
+     procedure FreeNodes; virtual;
      procedure SetEnumFilter(Value: String); virtual;
      procedure SetEnumAttr(Value: Integer); virtual;
      procedure SetRecursive(Value: Boolean); virtual;
      procedure BuildABSPaths;
 
-     function CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject; virtual; abstract;
-     procedure DeleteNode(ANode: TObject); virtual;
-     procedure AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent); virtual;
+     function DoCreateNode(AParentNode: TMM_UI_EnumFilesNode; AIndex: Integer; AIsDir: Boolean; AFullPath, ACaption: String): TMM_UI_EnumFilesNode; virtual;
+     procedure DoDeleteNode(ANode: TMM_UI_EnumFilesNode); virtual;
+     procedure DoAddNode(AParentNode, ANewNode: TMM_UI_EnumFilesNode; AOnClick: TNotifyEvent); virtual;
+
+     function CreateComponentNode(ANode: TMM_UI_EnumFilesNode): TObject; virtual; abstract;
+     procedure DeleteComponentNode(AComponentNode: TObject); virtual;
+     procedure AddComponentNode(AParentComponentNode, ANewComponentNode: TObject; AOnClick: TNotifyEvent); virtual; abstract;
 
   public
      constructor Create(AOwner: TComponent); override;
@@ -77,7 +93,7 @@ type
      property EnumFilter: String read rEnumFilter write SetEnumFilter;
      property EnumAttr: Integer read rEnumAttr write SetEnumAttr default faAnyfile;
      property DeleteExtFromCaption: Boolean read rDeleteExtFromCaption write rDeleteExtFromCaption;
-     property DefaultItem: String read rDefaultItem write rDefaultItem;
+     property DefaultCaption: String read rDefaultCaption write rDefaultCaption;
      property Recursive: Boolean read rRecursive write SetRecursive default False;
      property Sorted: TMM_UI_EnumFilesSorting read rSorted write SetSorted default soNone;
      property UpdateAfterLoaded: Boolean read rUpdateAfterLoaded write rUpdateAfterLoaded default True;
@@ -97,10 +113,10 @@ type
      rMenuItem,
      rSelectedItem: TMenuItem;
 
-     procedure UpdateControl; override;
+     procedure CreateNodes; override;
 
-     function CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject; override;
-     procedure AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent); override;
+     function CreateComponentNode(ANode: TMM_UI_EnumFilesNode): TObject; override;
+     procedure AddComponentNode(AParentComponentNode, ANewComponentNode: TObject; AOnClick: TNotifyEvent); override;
 
      procedure SetMenuItem(Value: TMenuItem); virtual;
 
@@ -125,10 +141,10 @@ type
      rParentNode,
      rSelectedNode: TTreeNode;
 
-     procedure UpdateControl; override;
+     procedure CreateNodes; override;
 
-     function CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject; override;
-     procedure AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent); override;
+     function CreateComponentNode(ANode: TMM_UI_EnumFilesNode): TObject; override;
+     procedure AddComponentNode(AParentComponentNode, ANewComponentNode: TObject; AOnClick: TNotifyEvent); override;
 
      procedure SetTreeView(Value: TCustomTreeView); virtual;
      procedure SetParentNode(Value: TTreeNode); virtual;
@@ -155,7 +171,7 @@ uses MM_VariantsStringList
 
 procedure Register;
 begin
-     RegisterComponents('MaxM_UI', [TMM_UI_EnumFilesINMenuItem]);
+     RegisterComponents('MaxM_UI', [TMM_UI_EnumFilesINMenuItem, TMM_UI_EnumFilesINTreeView]);
 end;
 
 constructor TMM_UI_EnumFiles.Create(AOwner: TComponent);
@@ -177,6 +193,7 @@ destructor TMM_UI_EnumFiles.Destroy;
 begin
   rABSBasePaths.Free;
   rBasePaths.Free;
+  FreeNodes;
 
   inherited Destroy;
 end;
@@ -188,7 +205,7 @@ begin
   if not(csDesigning in ComponentState) then
   begin
     BuildABSPaths;
-    if rUpdateAfterLoaded then UpdateControl;
+    if rUpdateAfterLoaded then CreateNodes;
   end;
 end;
 
@@ -244,13 +261,73 @@ begin
       end;
 end;
 
-procedure TMM_UI_EnumFiles.DeleteNode(ANode: TObject);
+function TMM_UI_EnumFiles.DoCreateNode(AParentNode: TMM_UI_EnumFilesNode;
+                                       AIndex: Integer; AIsDir: Boolean; AFullPath, ACaption: String): TMM_UI_EnumFilesNode;
+var
+   CanAdd: Boolean;
+   ParentComponentNode: TObject;
+
 begin
-  ANode.Free;
+  Result:= nil;
+  CanAdd:= True;
+
+  try
+     if (AParentNode <> nil)
+     then ParentComponentNode:= AParentNode.ComponentNode
+     else ParentComponentNode:= nil;
+
+     if Assigned(rOnCreateNode)
+     then CanAdd:= rOnCreateNode(Self, ParentComponentNode, AIndex, True, AFullPath, ACaption);
+
+     if CanAdd then
+     begin
+       Result:= TMM_UI_EnumFilesNode.Create;
+       if (AIndex >= Length(Nodes)) then SetLength(Nodes, AIndex+1);
+       Nodes[AIndex]:= Result;
+       with Result do
+       begin
+         ParentNode:= AParentNode;
+         Index:= AIndex;
+         IsDir:= AIsDir;
+         FullPath:= AFullPath;
+         Caption:= ACaption;
+         ComponentNode:= CreateComponentNode(Result);
+       end;
+     end;
+
+  finally
+  end;
 end;
 
-procedure TMM_UI_EnumFiles.AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent);
+procedure TMM_UI_EnumFiles.DoDeleteNode(ANode: TMM_UI_EnumFilesNode);
 begin
+  if (ANode <> nil) then
+  begin
+    DeleteComponentNode(ANode.ComponentNode);
+    if (ANode = Nodes[ANode.Index]) then
+    begin
+      Nodes[ANode.Index]:= nil;
+      ANode.Free;
+    end;
+  end;
+end;
+
+procedure TMM_UI_EnumFiles.DoAddNode(AParentNode, ANewNode: TMM_UI_EnumFilesNode;
+                                     AOnClick: TNotifyEvent);
+var
+   ParentComponentNode: TObject;
+
+begin
+  if (AParentNode <> nil)
+  then ParentComponentNode:= AParentNode.ComponentNode
+  else ParentComponentNode:= nil;
+
+  if (ANewNode <> nil) then AddComponentNode(ParentComponentNode, ANewNode.ComponentNode, AOnClick);
+end;
+
+procedure TMM_UI_EnumFiles.DeleteComponentNode(AComponentNode: TObject);
+begin
+  //Usually the components are released automatically, we do not do anything in base Class
 end;
 
 procedure TMM_UI_EnumFiles.SetBasePath(Value: String);
@@ -262,7 +339,7 @@ begin
        not(csLoading in ComponentState) then
     begin
       BuildABSPaths;
-      UpdateControl;
+      CreateNodes;
     end;
   end;
 end;
@@ -275,7 +352,7 @@ begin
      not(csLoading in ComponentState) then
   begin
     BuildABSPaths;
-    UpdateControl;
+    CreateNodes;
   end;
 end;
 
@@ -287,7 +364,7 @@ begin
 
     if not(csDesigning in ComponentState) and
        not(csLoading in ComponentState)
-    then UpdateControl;
+    then CreateNodes;
   end;
 end;
 
@@ -299,7 +376,7 @@ begin
 
     if not(csDesigning in ComponentState) and
        not(csLoading in ComponentState)
-    then UpdateControl;
+    then CreateNodes;
   end;
 end;
 
@@ -323,7 +400,7 @@ begin
 
     if not(csDesigning in ComponentState) and
        not(csLoading in ComponentState)
-    then UpdateControl;
+    then CreateNodes;
   end;
 end;
 
@@ -335,21 +412,21 @@ begin
 
     if not(csDesigning in ComponentState) and
        not(csLoading in ComponentState)
-    then UpdateControl;
+    then CreateNodes;
   end;
 end;
 
-procedure TMM_UI_EnumFiles.UpdateControl;
+procedure TMM_UI_EnumFiles.CreateNodes;
 var
    curNode: TObject;
    Index,
    baseIndex: Integer;
 
-   function SearchOnPath(xNode: TObject; BaseDir: String): Integer;
+   function SearchOnPath(xNode: TMM_UI_EnumFilesNode; BaseDir: String): Integer;
    var
       fileInfo: TSearchRec;
       err, i, dupIndex: Integer;
-      newNode,
+      newNode: TMM_UI_EnumFilesNode;
       dupNode: TObject;
       theCaption,
       theExt: String;
@@ -406,6 +483,17 @@ var
                               //then newNode:= xItems_Dirs.Objects[dupIndex]
 
                               inc(Index);
+
+                              newNode:= DoCreateNode(xNode, Index, True, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
+
+                              if (newNode <> nil) and (SearchOnPath(newNode, BaseDir+DirectorySeparator+fileInfo.Name) > 0)
+                              then xItems_Dirs.AddObject(theCaption, newNode)
+                              else begin
+                                     DoDeleteNode(newNode); //if there is no Items is an empty dir, delete it
+                                     dec(Index);
+                                   end;
+
+                              (*
                               CanAdd:= True;
 
                               if Assigned(rOnCreateNode)
@@ -413,31 +501,40 @@ var
 
                               if CanAdd
                               then begin
-                                     newNode:= CreateNode(Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name+DirectorySeparator, theCaption);
+                                     newNode:= CreateComponentNode(Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name+DirectorySeparator, theCaption);
 
                                      if (SearchOnPath(newNode, BaseDir+DirectorySeparator+fileInfo.Name) > 0)
                                      then xItems_Dirs.AddObject(theCaption, newNode)
                                      else begin
-                                            DeleteNode(newNode); //if there is no Items is an empty dir, delete it
+                                            DeleteComponentNode(newNode); //if there is no Items is an empty dir, delete it
                                             dec(Index);
                                           end;
                                    end
                               else dec(Index);
+                              *)
                             end
                        else if CanAdd then
                             begin
                               inc(Index);
 
+                              newNode:= DoCreateNode(xNode, Index, False, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
+
+                              if (newNode <> nil)
+                              then xItems_Files.AddObject(theCaption, newNode)
+                              else dec(Index);
+
+                              (*
                               if Assigned(rOnCreateNode)
                               then CanAdd:= rOnCreateNode(Self, Index, False, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
 
                               if CanAdd
                               then begin
-                                     newNode:= CreateNode(Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name+DirectorySeparator, theCaption);
+                                     newNode:= CreateComponentNode(Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name+DirectorySeparator, theCaption);
 
                                      xItems_Files.AddObject(theCaption, newNode);
                                    end
                               else dec(Index);
+                              *)
                             end;
                   end;
                   err :=FindNext(fileInfo);
@@ -446,12 +543,12 @@ var
 
              //Add First the SubDirectories
              for i :=0 to xItems_Dirs.Count-1 do
-               AddNode(xNode, xItems_Dirs.Objects[i], @Self.DoClick);
+               DoAddNode(xNode, TMM_UI_EnumFilesNode(xItems_Dirs.Objects[i]), @Self.DoClick);
 
              //Next Add the Files
              for i :=0 to xItems_Files.Count-1 do
              begin
-               AddNode(xNode, xItems_Files.Objects[i], @Self.DoClick);
+               DoAddNode(xNode, TMM_UI_EnumFilesNode(xItems_Files.Objects[i]), @Self.DoClick);
 
                if isDefault then
                begin
@@ -473,17 +570,41 @@ var
 
 begin
   rSelectedPath:= '';
+  Index:= -1;
 
   for baseindex:=0 to rABSBasePaths.Count-1 do
     if (rABSBasePaths.Strings[baseindex] <> '')
-    then SearchOnPath(BaseNode, rABSBasePaths.Strings[baseindex]);
+    then SearchOnPath(nil, rABSBasePaths.Strings[baseindex]);
 
   if Assigned(rOnUpdateDone) then rOnUpdateDone(Self);
 end;
 
+procedure TMM_UI_EnumFiles.FreeNodes;
+var
+   i: Integer;
+   curNode: TMM_UI_EnumFilesNode;
+
+begin
+  for i:=0 to Length(Nodes)-1 do
+  try
+    curNode:= Nodes[i];
+    if (curNode <> nil) then
+    begin
+      if (curNode.ComponentNode <> nil) then DeleteComponentNode(curNode.ComponentNode);
+      curNode.Free;
+    end;
+    Nodes[i]:= nil;
+
+  except
+    Nodes[i]:= nil;
+  end;
+
+  Nodes:= nil;
+end;
+
 procedure TMM_UI_EnumFiles.UpdateOnBasePath(DefaultClick: Boolean);
 begin
-  UpdateControl;
+  CreateNodes;
 end;
 
 constructor TMM_UI_EnumFilesINMenuItem.Create(AOwner: TComponent);
@@ -494,47 +615,51 @@ begin
   rSelectedItem:= nil;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.UpdateControl;
+procedure TMM_UI_EnumFilesINMenuItem.CreateNodes;
 begin
-  BaseNode:= rMenuItem;
-
   if (rMenuItem <> nil) then
   begin
     if rAutoClear then rMenuItem.Clear;
     if rAutoVisible then rMenuItem.Visible:= False;
-  end;
 
-  inherited UpdateControl;
+    inherited CreateNodes;
 
-  if rAutoVisible and (rMenuItem <> nil) and (rMenuItem.Count > 0) then rMenuItem.Visible:= True;
-end;
-
-function TMM_UI_EnumFilesINMenuItem.CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject;
-begin
-  if IsDir
-  then Result:= Menus.NewItem(ACaption, 0, False, True, nil, 0, Self.Name+'_DIR_'+IntToStr(AIndex))
-  else Result:= Menus.NewItem(ACaption, 0, False, True, nil, 0, Self.Name+'_'+IntToStr(AIndex));
-
-  //I shouldn't use Hint but a Path list in base class
-  TMenuItem(Result).Hint:= FullPath;
-
-  if (rDefaultItem <> '') and (Uppercase(ACaption) = Uppercase(rDefaultItem)) then
-  begin
-    if rDefaultClick and Assigned(rOnNodeClick)
-    then rOnNodeClick(Self, Result, FullPath);
-
-    rSelectedItem:= TMenuItem(Result);
-    rSelectedPath:= FullPath;
-    if rCheckedStyle then TMenuItem(Result).Checked:= True;
+    if rAutoVisible and (rMenuItem <> nil) and (rMenuItem.Count > 0) then rMenuItem.Visible:= True;
   end;
 end;
 
-procedure TMM_UI_EnumFilesINMenuItem.AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent);
+function TMM_UI_EnumFilesINMenuItem.CreateComponentNode(ANode: TMM_UI_EnumFilesNode): TObject;
 begin
-  if (NewNode <> nil) and (NewNode is TMenuItem) then
+  with ANode do
   begin
-    TMenuItem(NewNode).OnClick:= AOnClick;
-    if (ParentNode <> nil) and (ParentNode is TMenuItem) then TMenuItem(ParentNode).Add(TMenuItem(NewNode));
+    if IsDir
+    then Result:= Menus.NewItem(Caption, 0, False, True, nil, 0, Self.Name+'_DIR_'+IntToStr(Index))
+    else Result:= Menus.NewItem(Caption, 0, False, True, nil, 0, Self.Name+'_'+IntToStr(Index));
+
+    TMenuItem(Result).Tag:= PtrInt(ANode);
+
+    if (rDefaultCaption <> '') and (Uppercase(Caption) = Uppercase(rDefaultCaption)) then
+    begin
+      if rDefaultClick and Assigned(rOnNodeClick)
+      then rOnNodeClick(Self, Result, ANode);
+
+      rSelectedItem:= TMenuItem(Result);
+      rSelectedPath:= FullPath;
+      if rCheckedStyle then TMenuItem(Result).Checked:= True;
+    end;
+  end;
+end;
+
+procedure TMM_UI_EnumFilesINMenuItem.AddComponentNode(AParentComponentNode, ANewComponentNode: TObject; AOnClick: TNotifyEvent);
+begin
+  if (ANewComponentNode <> nil) and (ANewComponentNode is TMenuItem) then
+  begin
+    TMenuItem(ANewComponentNode).OnClick:= AOnClick;
+    if (AParentComponentNode <> nil)
+    then begin
+           if (AParentComponentNode is TMenuItem) then TMenuItem(AParentComponentNode).Add(TMenuItem(ANewComponentNode));
+         end
+    else if (rMenuItem <> nil) then rMenuItem.Add(TMenuItem(ANewComponentNode));
   end;
 end;
 
@@ -546,7 +671,7 @@ begin
 
     if not(csDesigning in ComponentState) and
        not(csLoading in ComponentState)
-    then UpdateControl;
+    then CreateNodes;
   end;
 end;
 
@@ -603,58 +728,99 @@ begin
 end;
 
 procedure TMM_UI_EnumFilesINMenuItem.DoClick(Sender: TObject);
-begin
-  if assigned(rOnNodeClick)
-  then rOnNodeClick(Self, Sender, TMenuItem(Sender).Hint);
+var
+   curNode: TMM_UI_EnumFilesNode;
 
+begin
   rSelectedItem:= TMenuItem(Sender);
-  //I shouldn't use Hint but a Path list in base class
-  rSelectedPath:= rSelectedItem.Hint;
+  if (rSelectedItem = nil) then exit;
+
+  try
+     curNode:= TMM_UI_EnumFilesNode(rSelectedItem.Tag);
+  except
+     curNode:= nil;
+  end;
+
+  if assigned(rOnNodeClick) then rOnNodeClick(Self, Sender, curNode);
+
+  if (curNode <> nil)
+  then rSelectedPath:= curNode.FullPath
+  else rSelectedPath:= '';
 
   if rCheckedStyle then rSelectedItem.Checked:= True;
 end;
 
 { TMM_UI_EnumFilesINTreeView }
 
-procedure TMM_UI_EnumFilesINTreeView.UpdateControl;
+procedure TMM_UI_EnumFilesINTreeView.CreateNodes;
 begin
-  BaseNode:= rParentNode;
-
   if (rParentNode <> nil) then
   begin
     if rAutoClear then rParentNode.DeleteChildren;
     if rAutoVisible then rParentNode.Visible:= False;
   end;
 
-  inherited UpdateControl;
+  inherited CreateNodes;
 
-  if rAutoVisible and (rParentNode <> nil) and (rParentNode.Count > 0) then rParentNode.Visible:= True;
+  if (rParentNode <> nil) and rAutoVisible and (rParentNode.Count > 0) then rParentNode.Visible:= True;
 end;
 
-function TMM_UI_EnumFilesINTreeView.CreateNode(AIndex: Integer; IsDir: Boolean; FullPath, ACaption: String): TObject;
+function TMM_UI_EnumFilesINTreeView.CreateComponentNode(ANode: TMM_UI_EnumFilesNode): TObject;
 begin
+  with ANode do
+  begin
+    Result:= TTreeNode.Create(rTreeView.Items);
+    TTreeNode(Result).Text:= Caption;
+    TTreeNode(Result).Data:= ANode;
 
+    if (rDefaultCaption <> '') and (Uppercase(Caption) = Uppercase(rDefaultCaption)) then
+    begin
+      if rDefaultClick and Assigned(rOnNodeClick)
+      then rOnNodeClick(Self, Result, ANode);
+
+      rSelectedNode:= TTreeNode(Result);
+      rSelectedPath:= FullPath;
+      //if rCheckedStyle then TMenuItem(Result).Checked:= True;
+    end;
+  end;
 end;
 
-procedure TMM_UI_EnumFilesINTreeView.AddNode(ParentNode, NewNode: TObject; AOnClick: TNotifyEvent);
+procedure TMM_UI_EnumFilesINTreeView.AddComponentNode(AParentComponentNode, ANewComponentNode: TObject; AOnClick: TNotifyEvent);
 begin
-
+  if (ANewComponentNode <> nil) and (ANewComponentNode is TTreeNode) then
+  begin
+    if (AParentComponentNode <> nil) and (AParentComponentNode is TTreeNode)
+    then rTreeView.Items.AddNode(TTreeNode(ANewComponentNode), TTreeNode(AParentComponentNode),
+                                 TTreeNode(ANewComponentNode).Text,
+                                 TTreeNode(ANewComponentNode).Data, naAddChild)
+    else rTreeView.Items.AddNode(TTreeNode(ANewComponentNode), nil,
+                                 TTreeNode(ANewComponentNode).Text,
+                                 TTreeNode(ANewComponentNode).Data, naAdd);
+  end;
 end;
 
 procedure TMM_UI_EnumFilesINTreeView.SetTreeView(Value: TCustomTreeView);
 begin
+  if (Value <> rTreeView) then
+  begin
+    rTreeView :=Value;
+    if (rTreeView <> nil) then rTreeView.OnClick:= @Self.DoClick;
 
+    if not(csDesigning in ComponentState) and
+       not(csLoading in ComponentState)
+    then CreateNodes;
+  end;
 end;
 
 procedure TMM_UI_EnumFilesINTreeView.SetParentNode(Value: TTreeNode);
 begin
-  if (Value<>rParentNode) then
+  if (Value <> rParentNode) then
   begin
     rParentNode:= Value;
 
     if not(csDesigning in ComponentState) and
        not(csLoading in ComponentState)
-    then UpdateControl;
+    then CreateNodes;
   end;
 end;
 
@@ -667,16 +833,28 @@ begin
 end;
 
 procedure TMM_UI_EnumFilesINTreeView.DoClick(Sender: TObject);
+var
+   curNode: TMM_UI_EnumFilesNode;
+
 begin
-  if assigned(rOnNodeClick)
-  then rOnNodeClick(Self, Sender, TTreeNode(Sender).Data);
+  rSelectedNode:= TTreeView(Sender).Selected;
+  if (rSelectedNode = nil) then exit;
 
-  rSelectedNode:= TTreeNode(Sender);
-  //I shouldn't use Hint but a Path list in base class
-  rSelectedPath:= rSelectedNode.Data;
+  try
+     curNode:= TMM_UI_EnumFilesNode(rSelectedNode.Data);
+  except
+     curNode:= nil;
+  end;
 
-  if rCheckedStyle then rSelectedNode.Checked:= True;
+  if assigned(rOnNodeClick) then rOnNodeClick(Self, Sender, curNode);
+
+  if (curNode <> nil)
+  then rSelectedPath:= curNode.FullPath
+  else rSelectedPath:= '';
+
+  //if rCheckedStyle then rSelectedNode.Checked:= True;
 end;
+
 
 end.
 

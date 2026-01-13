@@ -8,8 +8,9 @@ unit MaxM_UI;
 interface
 
 uses
-  MM_UI_Highlighter, MM_UI_DBGrid, MM_UI_ComboBox, MM_UI_DBValuesComboBox, MM_UI_DBDateEdit, MM_UI_Consts, 
-  MM_UI_AutoComplete, MM_UI_DBAutoComplete, MM_UI_DBColorBox, MM_UI_EnumFiles, LazarusPackageIntf;
+  MM_UI_Highlighter, MM_UI_DBGrid, MM_UI_ComboBox, MM_UI_DBValuesComboBox, 
+  MM_UI_DBDateEdit, MM_UI_Consts, MM_UI_AutoComplete, MM_UI_DBAutoComplete, 
+  MM_UI_DBColorBox, MM_UI_EnumFiles, LazarusPackageIntf;
 
 implementation
 
