@@ -73,6 +73,7 @@ type
      function CreateComponentNode(ANode: TMM_UI_EnumFilesNode): TObject; virtual; abstract;
      procedure DeleteComponentNode(AComponentNode: TObject); virtual;
      procedure AddComponentNode(AParentComponentNode, ANewComponentNode: TObject; AOnClick: TNotifyEvent); virtual; abstract;
+     procedure SelectComponentNode(ANode: TMM_UI_EnumFilesNode); virtual; abstract;
 
   public
      constructor Create(AOwner: TComponent); override;
@@ -117,6 +118,7 @@ type
 
      function CreateComponentNode(ANode: TMM_UI_EnumFilesNode): TObject; override;
      procedure AddComponentNode(AParentComponentNode, ANewComponentNode: TObject; AOnClick: TNotifyEvent); override;
+     procedure SelectComponentNode(ANode: TMM_UI_EnumFilesNode); override;
 
      procedure SetMenuItem(Value: TMenuItem); virtual;
 
@@ -145,6 +147,7 @@ type
 
      function CreateComponentNode(ANode: TMM_UI_EnumFilesNode): TObject; override;
      procedure AddComponentNode(AParentComponentNode, ANewComponentNode: TObject; AOnClick: TNotifyEvent); override;
+     procedure SelectComponentNode(ANode: TMM_UI_EnumFilesNode); override;
 
      procedure SetTreeView(Value: TCustomTreeView); virtual;
      procedure SetParentNode(Value: TTreeNode); virtual;
@@ -292,6 +295,15 @@ begin
          FullPath:= AFullPath;
          Caption:= ACaption;
          ComponentNode:= CreateComponentNode(Result);
+
+         if (rDefaultCaption <> '') and (Uppercase(Caption) = Uppercase(rDefaultCaption)) then
+         begin
+           if rDefaultClick and Assigned(rOnNodeClick)
+           then rOnNodeClick(Self, ComponentNode, Result);
+
+           rSelectedPath:= FullPath;
+           SelectComponentNode(Result);
+         end;
        end;
      end;
 
@@ -637,16 +649,6 @@ begin
     else Result:= Menus.NewItem(Caption, 0, False, True, nil, 0, Self.Name+'_'+IntToStr(Index));
 
     TMenuItem(Result).Tag:= PtrInt(ANode);
-
-    if (rDefaultCaption <> '') and (Uppercase(Caption) = Uppercase(rDefaultCaption)) then
-    begin
-      if rDefaultClick and Assigned(rOnNodeClick)
-      then rOnNodeClick(Self, Result, ANode);
-
-      rSelectedItem:= TMenuItem(Result);
-      rSelectedPath:= FullPath;
-      if rCheckedStyle then TMenuItem(Result).Checked:= True;
-    end;
   end;
 end;
 
@@ -661,6 +663,16 @@ begin
          end
     else if (rMenuItem <> nil) then rMenuItem.Add(TMenuItem(ANewComponentNode));
   end;
+end;
+
+procedure TMM_UI_EnumFilesINMenuItem.SelectComponentNode(ANode: TMM_UI_EnumFilesNode);
+begin
+  if (ANode.ComponentNode <> nil) and (ANode.ComponentNode is TMenuItem)
+  then begin
+         rSelectedItem:= TMenuItem(ANode.ComponentNode);
+         if rCheckedStyle then rSelectedItem.Checked:= True;
+       end
+  else rSelectedItem:= nil;
 end;
 
 procedure TMM_UI_EnumFilesINMenuItem.SetMenuItem(Value: TMenuItem);
@@ -772,16 +784,6 @@ begin
     Result:= TTreeNode.Create(rTreeView.Items);
     TTreeNode(Result).Text:= Caption;
     TTreeNode(Result).Data:= ANode;
-
-    if (rDefaultCaption <> '') and (Uppercase(Caption) = Uppercase(rDefaultCaption)) then
-    begin
-      if rDefaultClick and Assigned(rOnNodeClick)
-      then rOnNodeClick(Self, Result, ANode);
-
-      rSelectedNode:= TTreeNode(Result);
-      rSelectedPath:= FullPath;
-      //if rCheckedStyle then TMenuItem(Result).Checked:= True;
-    end;
   end;
 end;
 
@@ -797,6 +799,13 @@ begin
                                  TTreeNode(ANewComponentNode).Text,
                                  TTreeNode(ANewComponentNode).Data, naAdd);
   end;
+end;
+
+procedure TMM_UI_EnumFilesINTreeView.SelectComponentNode(ANode: TMM_UI_EnumFilesNode);
+begin
+  if (ANode.ComponentNode <> nil) and (ANode.ComponentNode is TTreeNode)
+  then rSelectedNode:= TTreeNode(ANode.ComponentNode)
+  else rSelectedNode:= nil;
 end;
 
 procedure TMM_UI_EnumFilesINTreeView.SetTreeView(Value: TCustomTreeView);
