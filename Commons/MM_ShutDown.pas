@@ -15,14 +15,18 @@ unit MM_ShutDown;
 
 interface
 
-uses SysUtils, Windows;
+uses SysUtils
+  {$IFDEF Windows}, Windows {$ENDIF}
+  ;
 
+{$IFDEF Windows}
 const
   EWX_HYBRID_SHUTDOWN         =$00400000;
   EWX_BOOTOPTIONS             =$01000000;
   EWX_ARSO                    =$04000000;
   EWX_CHECK_SAFE_FOR_SERVER   =$08000000;
   EWX_SYSTEM_INITIATED        =$10000000;
+{$ENDIF}
 
 type
     TShutDownMode = (
@@ -39,6 +43,7 @@ function ShutDown(AMode: TShutDownMode; Force: Boolean = False; AddFlag: Cardina
 
 implementation
 
+{$IFDEF Windows}
 function LockWorkStation: BOOL; external 'user32' name 'LockWorkStation';
 function SetSuspendState(Hibernate, ForceCritical, DisableWakeEvent: ByteBool): ByteBool; external 'powrprof' name 'SetSuspendState';
 
@@ -65,12 +70,14 @@ begin
     AdjustTokenPrivileges(hToken, false, @tkp, 0, nil, nil);
   end;
 end;
+{$ENDIF}
 
 function ShutDown(AMode: TShutDownMode; Force: Boolean; AddFlag: Cardinal): Boolean;
 var
    flag: Cardinal;
 
 begin
+  {$IFDEF Windows}
   Case AMode of
     sdm_SHUTDOWN: begin
        Case Win32Platform of
@@ -103,6 +110,7 @@ begin
        Result:= SetSuspendState(True, Force, False);
     end;
   end;
+  {$ENDIF}
 end;
 
 
