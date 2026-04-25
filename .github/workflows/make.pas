@@ -158,7 +158,7 @@ begin
       AddPackage(Result, true);
   OutLog(etDebug, #10'#----------------------------------[GET IN  DEPENDENS]----------------------------------#'#10);
   for Result in FindAllFiles(GetCurrentDir + DirectorySeparator, '*.lpk') do
-    AddPackage(Result, false);
+    AddPackage(Result, true);
   OutLog(etDebug, #10'#----------------------------------[BUILD    PROJECTS]----------------------------------#'#10);
   for Result in FindAllFiles(GetCurrentDir, '*.lpi') do
       if not Result.Contains(DirectorySeparator + 'use' + DirectorySeparator) then
@@ -175,7 +175,7 @@ begin
   try
     if ParamCount > 0 then
       case ParamStr(1) of
-        'build': BuildAll([]);
+        'build': BuildAll(['BGRAControls']);
         else OutLog(etError, ParamStr(1));
       end;
   except
