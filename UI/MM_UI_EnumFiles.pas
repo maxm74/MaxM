@@ -35,7 +35,6 @@ type
 
      rSorted: TMM_UI_EnumFilesSorting;
      rBasePath,
-     //BaseDir,
      rSelectedPath,
      rEnumFilter,
      rDefaultCaption: String;
@@ -66,7 +65,7 @@ type
      procedure SetRecursive(Value: Boolean); virtual;
      procedure BuildABSPaths;
 
-     function DoCreateNode(AParentNode: TMM_UI_EnumFilesNode; AIndex: Integer; AIsDir: Boolean; AFullPath, ACaption: String): TMM_UI_EnumFilesNode; virtual;
+     function DoCreateNode(AParentNode: TMM_UI_EnumFilesNode; AIndex: Integer; AIsDir: Boolean; AFullPath: String; var ACaption: String): TMM_UI_EnumFilesNode; virtual;
      procedure DoDeleteNode(ANode: TMM_UI_EnumFilesNode); virtual;
      procedure DoAddNode(AParentNode, ANewNode: TMM_UI_EnumFilesNode; AOnClick: TNotifyEvent); virtual;
 
@@ -88,7 +87,7 @@ type
      property AutoClear: Boolean read rAutoClear write rAutoClear;
      property AutoVisible: Boolean read rAutoVisible write rAutoVisible;
      property BasePath: String read rBasePath write SetBasePath;
-     property BasePaths: TStringList read rBasePaths write SetBasePaths;
+     property BasePaths: TStringList read rBasePaths write SetBasePaths nodefault;
      property CheckedStyle: Boolean read  rCheckedStyle write rCheckedStyle;
      property DefaultClick: Boolean read rDefaultClick write rDefaultClick;
      property EnumFilter: String read rEnumFilter write SetEnumFilter;
@@ -182,7 +181,7 @@ begin
      inherited Create(AOwner);
      rBasePaths :=TStringList.Create;
      rABSBasePaths:= TStringList.Create;
-     rBasePaths.Add('.');
+     if (csDesigning in ComponentState) then rBasePaths.Add('.');
      rEnumFilter :='*.*';
      rEnumAttr :=faAnyFile;
      rRecursive :=False;
@@ -244,28 +243,13 @@ begin
                if (currValue[Length(currValue)] in AllowDirectorySeparators)
                then SetLength(currValue, Length(currValue)-1);
 
-               (*
-               if (currValue[1]='.') then
-               begin
-                    Delete(currValue, 1, 1);
-                    if (currValue<>'') then
-                    begin
-                         if (currValue[1] in AllowDirectorySeparators)
-                         then Delete(currValue, 1, 1);
-
-                         currValue :=rBasePath+DirectorySeparator+currValue;
-                    end;
-                end;
-                rBasePaths.Strings[index] :=currValue;
-               *)
-
                rABSBasePaths.Add(currValue);
            end;
       end;
 end;
 
 function TMM_UI_EnumFiles.DoCreateNode(AParentNode: TMM_UI_EnumFilesNode;
-                                       AIndex: Integer; AIsDir: Boolean; AFullPath, ACaption: String): TMM_UI_EnumFilesNode;
+                                       AIndex: Integer; AIsDir: Boolean; AFullPath: String; var ACaption: String): TMM_UI_EnumFilesNode;
 var
    CanAdd: Boolean;
    ParentComponentNode: TObject;
@@ -280,7 +264,7 @@ begin
      else ParentComponentNode:= nil;
 
      if Assigned(rOnCreateNode)
-     then CanAdd:= rOnCreateNode(Self, ParentComponentNode, AIndex, True, AFullPath, ACaption);
+     then CanAdd:= rOnCreateNode(Self, ParentComponentNode, AIndex, AIsDir, AFullPath, ACaption);
 
      if CanAdd then
      begin
@@ -361,11 +345,7 @@ begin
   rBasePaths.Clear;
   rBasePaths.AddStrings(Value);
   if not(csDesigning in ComponentState) and
-     not(csLoading in ComponentState) then
-  begin
-    BuildABSPaths;
-    CreateNodes;
-  end;
+     not(csLoading in ComponentState) then UpdateOnBasePath(rDefaultClick);
 end;
 
 procedure TMM_UI_EnumFiles.SetEnumAttr(Value: Integer);
@@ -451,133 +431,104 @@ var
    begin
      Result:= 0;
 
-        //if Last char is Separator, Delete it
-        if (BaseDir[Length(BaseDir)] in AllowDirectorySeparators)
-        then SetLength(BaseDir, Length(BaseDir)-1);
+     //if Last char is Separator, Delete it
+     if (BaseDir[Length(BaseDir)] in AllowDirectorySeparators)
+     then SetLength(BaseDir, Length(BaseDir)-1);
 
-        if DirectoryExists(BaseDir) then
-        begin
-          try
-             xItems_Files :=TVariantsStringList.Create;
-             xItems_Files.OwnsObjects:= False;
-             xItems_Dirs :=TVariantsStringList.Create;
-             xItems_Dirs.OwnsObjects:= False;
+     if DirectoryExists(BaseDir) then
+     begin
+       try
+          xItems_Files:= TVariantsStringList.Create;
+          xItems_Files.OwnsObjects:= False;
+          xItems_Dirs:= TVariantsStringList.Create;
+          xItems_Dirs.OwnsObjects:= False;
 
-             xItems_Files.Duplicates :=dupAccept;
-             if (rSorted <> soNone)
-             then begin
-                       xItems_Files.SortDescending := (rSorted = soDescending);
-                       xItems_Files.Sorted :=True;
-                   end;
-
-             xItems_Dirs.Duplicates :=dupAccept;
-             if (rSorted <> soNone)
-             then begin
-                       xItems_Dirs.SortDescending := (rSorted = soDescending);
-                       xItems_Dirs.Sorted :=True;
-                   end;
-
-             err :=FindFirst(BaseDir+DirectorySeparator+'*', faAnyFile, fileInfo);
-             while (err=0) do
-             begin
-                  if (fileInfo.Name[1] <> '.') then  //non è [.] o [..]
-                  begin
-                       theCaption :=ExtractFileName(fileInfo.Name);
-                       theExt     :=ExtractFileExt(fileInfo.Name);
-                       IsDir  :=((fileInfo.Attr and faDirectory)<>0);
-                       CanAdd :=((fileInfo.Attr and rEnumAttr) <>0) and
-                                 MatchesMask(fileInfo.Name, rEnumFilter);
-                       if IsDir and rRecursive
-                       then begin
-                              //If there is a duplicated Item (?) use It or create new ??
-
-                              //if (xItems_Dirs.Find(theCaption, dupIndex))
-                              //then newNode:= xItems_Dirs.Objects[dupIndex]
-
-                              inc(Index);
-
-                              newNode:= DoCreateNode(xNode, Index, True, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
-
-                              if (newNode <> nil) and (SearchOnPath(newNode, BaseDir+DirectorySeparator+fileInfo.Name) > 0)
-                              then xItems_Dirs.AddObject(theCaption, newNode)
-                              else begin
-                                     DoDeleteNode(newNode); //if there is no Items is an empty dir, delete it
-                                     dec(Index);
-                                   end;
-
-                              (*
-                              CanAdd:= True;
-
-                              if Assigned(rOnCreateNode)
-                              then CanAdd:= rOnCreateNode(Self, Index, True, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
-
-                              if CanAdd
-                              then begin
-                                     newNode:= CreateComponentNode(Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name+DirectorySeparator, theCaption);
-
-                                     if (SearchOnPath(newNode, BaseDir+DirectorySeparator+fileInfo.Name) > 0)
-                                     then xItems_Dirs.AddObject(theCaption, newNode)
-                                     else begin
-                                            DeleteComponentNode(newNode); //if there is no Items is an empty dir, delete it
-                                            dec(Index);
-                                          end;
-                                   end
-                              else dec(Index);
-                              *)
-                            end
-                       else if CanAdd then
-                            begin
-                              inc(Index);
-
-                              newNode:= DoCreateNode(xNode, Index, False, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
-
-                              if (newNode <> nil)
-                              then xItems_Files.AddObject(theCaption, newNode)
-                              else dec(Index);
-
-                              (*
-                              if Assigned(rOnCreateNode)
-                              then CanAdd:= rOnCreateNode(Self, Index, False, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
-
-                              if CanAdd
-                              then begin
-                                     newNode:= CreateComponentNode(Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name+DirectorySeparator, theCaption);
-
-                                     xItems_Files.AddObject(theCaption, newNode);
-                                   end
-                              else dec(Index);
-                              *)
-                            end;
-                  end;
-                  err :=FindNext(fileInfo);
-             end;
-             FindClose(fileInfo);
-
-             //Add First the SubDirectories
-             for i :=0 to xItems_Dirs.Count-1 do
-               DoAddNode(xNode, TMM_UI_EnumFilesNode(xItems_Dirs.Objects[i]), @Self.DoClick);
-
-             //Next Add the Files
-             for i :=0 to xItems_Files.Count-1 do
-             begin
-               DoAddNode(xNode, TMM_UI_EnumFilesNode(xItems_Files.Objects[i]), @Self.DoClick);
-
-               if isDefault then
-               begin
-                 (* rSelectedPath :=newItem.Hint;
-
-                  if DefaultClick then DoClick(xItems_Dirs.Objects[i]);
-                  *)
+          xItems_Files.Duplicates:= dupAccept;
+          if (rSorted <> soNone)
+          then begin
+                 xItems_Files.SortDescending:= (rSorted = soDescending);
+                 xItems_Files.Sorted:= True;
                end;
-             end;
 
-          finally
-            Result:= xItems_Dirs.Count+xItems_Files.Count;
+          xItems_Dirs.Duplicates:= dupAccept;
+          if (rSorted <> soNone)
+          then begin
+                 xItems_Dirs.SortDescending:= (rSorted = soDescending);
+                 xItems_Dirs.Sorted:= True;
+               end;
 
-            xItems_Files.Free;
-            xItems_Dirs.Free;
+          err:= FindFirst(BaseDir+DirectorySeparator+'*', faAnyFile, fileInfo);
+          while (err=0) do
+          begin
+            if (fileInfo.Name[1] <> '.') then  //non è [.] o [..]
+            begin
+              theCaption:= ExtractFileName(fileInfo.Name);
+              theExt:= ExtractFileExt(fileInfo.Name);
+              IsDir:= ((fileInfo.Attr and faDirectory)<>0);
+              CanAdd:= ((fileInfo.Attr and rEnumAttr) <>0) and MatchesMask(fileInfo.Name, rEnumFilter);
+
+              if rDeleteExtFromCaption then Delete(theCaption, Pos(theExt, theCaption), MaxInt);
+
+              if IsDir and rRecursive
+              then begin
+                     //If there is a duplicated Item (?) use It or create new ??
+
+                     //if (xItems_Dirs.Find(theCaption, dupIndex))
+                     //then newNode:= xItems_Dirs.Objects[dupIndex]
+
+                     inc(Index);
+
+                     newNode:= DoCreateNode(xNode, Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
+
+                     if (newNode <> nil) and (SearchOnPath(newNode, BaseDir+DirectorySeparator+fileInfo.Name) > 0)
+                     then xItems_Dirs.AddObject(theCaption, newNode)
+                     else begin
+                            DoDeleteNode(newNode); //if there is no Items is an empty dir, delete it
+                            dec(Index);
+                          end;
+                   end
+              else if CanAdd then
+                   begin
+                     inc(Index);
+
+                     newNode:= DoCreateNode(xNode, Index, IsDir, BaseDir+DirectorySeparator+fileInfo.Name, theCaption);
+
+                     if (newNode <> nil)
+                     then xItems_Files.AddObject(theCaption, newNode)
+                     else dec(Index);
+                   end;
+            end;
+
+            err :=FindNext(fileInfo);
           end;
-        end;
+          FindClose(fileInfo);
+
+          //Add First the SubDirectories
+          for i :=0 to xItems_Dirs.Count-1 do
+             DoAddNode(xNode, TMM_UI_EnumFilesNode(xItems_Dirs.Objects[i]), @Self.DoClick);
+
+          //Next Add the Files
+          for i :=0 to xItems_Files.Count-1 do
+          begin
+            DoAddNode(xNode, TMM_UI_EnumFilesNode(xItems_Files.Objects[i]), @Self.DoClick);
+
+            (*
+            if isDefault then
+            begin
+              rSelectedPath :=newItem.Hint;
+
+              if DefaultClick then DoClick(xItems_Dirs.Objects[i]);
+
+            end;
+            *)
+          end;
+       finally
+         Result:= xItems_Dirs.Count+xItems_Files.Count;
+
+         xItems_Files.Free;
+         xItems_Dirs.Free;
+       end;
+     end;
    end;
 
 begin
@@ -616,6 +567,7 @@ end;
 
 procedure TMM_UI_EnumFiles.UpdateOnBasePath(DefaultClick: Boolean);
 begin
+  BuildABSPaths;
   CreateNodes;
 end;
 
