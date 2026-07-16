@@ -1,19 +1,26 @@
 unit MM_OpenArrayList;
 
-{$mode objfpc}{$H+}
+{$ifdef fpc}
+  {$mode delphi}
+{$endif}
+{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, testutils;
+  Classes, SysUtils {$ifdef fpc}, testutils {$else}, Types, RTLConsts{$endif};
 
 type
    { TOpenArray }
-  generic TOpenArray<T> = class(TNoRefCountObject)
+  TOpenArray<T> = class(TNoRefCountObject)
   protected
     rList: array of T;
+    rSelectedIndex: Integer;
 
-    function GetByIndex(aIndex: DWord) : T; virtual;
+    function GetSelected: T;
+    procedure SetSelectedIndex(AValue: Integer);
+
+    function GetByIndex(const aIndex: DWord) : T; virtual;
     procedure PutByIndex(const aIndex: DWord; aData: T); virtual;
 
     function FreeElement(var aData: T): Boolean; virtual;
@@ -23,45 +30,48 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Add(const aData: T): DWord; virtual; overload;
-    function Add(const ACount: DWord; const ADataArray: array of T): Boolean; virtual; overload;
+    function Add(const aData: T): DWord; overload; virtual;
+    function Add(const ACount: DWord; const ADataArray: array of T): Boolean; overload; virtual;
 
     function CopyFrom(const ACount: DWord; const ADataArray: array of T): Boolean; virtual;
 
-    function Del(const aData: T): Boolean; virtual; overload;
-    function Del(const aIndex: DWord): Boolean; virtual; overload;
+    function Del(const aData: T): Boolean; overload; virtual;
+    function Del(const aIndex: DWord): Boolean; overload; virtual;
 
     function Clear: Boolean; virtual;
 
     function Find(const aData: T): Integer; virtual;
 
     function GetCount: DWord; virtual; stdcall;
-    function Get(const aIndex: DWord; out aData: T): Boolean; virtual; overload;
-    function Put(const aIndex: DWord; const aData: T): Boolean; virtual; overload;
+    function Get(const aIndex: DWord; out aData: T): Boolean; overload; virtual;
+    function Put(const aIndex: DWord; const aData: T): Boolean; overload; virtual;
 
     property Count: DWord read GetCount;
 
     property Data[const aIndex: DWord]: T read GetByIndex write PutByIndex; default;
+
+    property SelectedIndex: Integer read rSelectedIndex write SetSelectedIndex;
+    property Selected: T read GetSelected;
   end;
 
-  generic IOpenArrayR<T> = interface
+  IOpenArrayR<T> = interface
     function GetCount: DWord; stdcall;
     function Get(const AIndex: DWord; out aData: T): Boolean; stdcall;
   end;
 
-  generic IOpenArrayW<T> = interface
+  IOpenArrayW<T> = interface
     function Add(const aData: T): DWord;  stdcall;
     function Put(const AIndex: DWord; var aData: T): Boolean; stdcall;
     function CopyFrom(const ACount: DWord; const AArray: array of T): Boolean; stdcall;
     function Del(const aData: T): Boolean; stdcall;
   end;
 
-  TOpenArrayString = class(specialize TOpenArray<String>);
-  IOpenArrayStringR = interface(specialize IOpenArrayR<String>) end;
-  IOpenArrayStringW = interface(specialize IOpenArrayW<String>) end;
+  TOpenArrayString = class(TOpenArray<String>);
+  IOpenArrayStringR = interface(IOpenArrayR<String>) end;
+  IOpenArrayStringW = interface(IOpenArrayW<String>) end;
 
   { TOpenArrayList }
-  generic TOpenArrayList<T, K> = class(TNoRefCountObject)
+  TOpenArrayList<T, K> = class(TNoRefCountObject)
   type
     TInfo = record
       Key: K;
@@ -71,10 +81,14 @@ type
 
   protected
     rList: array of TInfo;
+    rSelectedIndex: Integer;
 
-    function Get(const aKey: K) : PData; virtual; overload;
-    function GetByIndex(Index: DWord) : PData; virtual;
-    function GetKey(Index: DWord) : K; virtual;
+    function GetSelected: T;
+    procedure SetSelectedIndex(AValue: Integer);
+
+    function Get(const aKey: K) : PData; overload; virtual;
+    function GetByIndex(const Index: DWord) : PData; virtual;
+    function GetKey(const Index: DWord) : K; virtual;
 
     function FreeElement(var aData: T): Boolean; virtual;
     function CompData(aData1, aData2: T): Integer; virtual;  //0 = , -1 AData1 < AData2, 1 AData1 > AData2
@@ -83,14 +97,14 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Add(const aKey: K; const aData: T): Integer; virtual; overload;
-    function Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; virtual; overload;
+    function Add(const aKey: K; const aData: T): Integer; overload; virtual;
+    function Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; overload; virtual;
 
     function CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; virtual;
 
-    function Del(const aKey: K): Boolean; virtual; overload;
-    function Del(const aData: T): Boolean; virtual; overload;
-    function Del(const aIndex: DWord): Boolean; virtual; overload;
+    function Del(const aKey: K): Boolean; overload; virtual;
+    function Del(const aData: T): Boolean; overload; virtual;
+    function Del(const aIndex: DWord): Boolean; overload; virtual;
 
     function Clear: Boolean; virtual;
 
@@ -98,7 +112,7 @@ type
     function Find(const aData: T): Integer; virtual;
 
     function GetCount: DWord; virtual; stdcall;
-    function Get(const aIndex: DWord; out aData: T): Boolean; virtual; overload;
+    function Get(const aIndex: DWord; out aData: T): Boolean; overload; virtual;
     function GetByKey(const aKey: K; out aData: T): Boolean; virtual;
 
     property Count: DWord read GetCount;
@@ -106,22 +120,25 @@ type
     property DataByKey[const aKey: K]: PData read Get;
     property Data[const aIndex: DWord]: PData read GetByIndex; default;
     property Key[const aIndex: DWord]: K read GetKey;
+
+    property SelectedIndex: Integer read rSelectedIndex write SetSelectedIndex;
+    property Selected: T read GetSelected;
   end;
 
-  generic IOpenArrayListR<T, K> = interface
+  IOpenArrayListR<T, K> = interface
     function GetCount: DWord; stdcall;
     function Get(const AIndex: DWord; out aData: T): Boolean; stdcall;
     function GetByKey(const aKey: K; out aData: T): Boolean; stdcall;
   end;
 
-  generic IOpenArrayListW<T, K> = interface
+  IOpenArrayListW<T, K> = interface
     function Put(const AIndex: DWord; var aData: T): Boolean; stdcall;
     function PutByKey(const aKey: K; var aData: T): Boolean; stdcall;
     function CopyFrom(const ACount: DWord; const AArray: array of T): Boolean; stdcall;
   end;
 
   TKeyString = type String;
-  TOpenArrayListString = class(specialize TOpenArrayList<String, TKeyString>);
+  TOpenArrayListString = class(TOpenArrayList<String, TKeyString>);
 
 implementation
 
@@ -129,21 +146,39 @@ uses SysConst;
 
 { TOpenArray }
 
-function TOpenArray.GetByIndex(aIndex: DWord): T;
+function TOpenArray<T>.GetSelected: T;
+begin
+  if (rSelectedIndex >= 0) and (rSelectedIndex < Length(rList))
+  then Result:= rList[rSelectedIndex]
+  else Result:= Default(T);
+end;
+
+procedure TOpenArray<T>.SetSelectedIndex(AValue: Integer);
+begin
+  if (AValue <> rSelectedIndex) and
+     (AValue >= 0) and (AValue < Length(rList)) then
+  begin
+    if (rList[AValue] <> Default(T))
+    then rSelectedIndex:= AValue
+    else rSelectedIndex:= -1;
+  end;
+end;
+
+function TOpenArray<T>.GetByIndex(const aIndex: DWord): T;
 begin
   if (aIndex < Length(rList))
   then Result:= rList[aIndex]
   else raise EListError.Create(Format(SListIndexError, [aIndex]));
 end;
 
-procedure TOpenArray.PutByIndex(const aIndex: DWord; aData: T);
+procedure TOpenArray<T>.PutByIndex(const aIndex: DWord; aData: T);
 begin
   if (aIndex < Length(rList))
   then rList[aIndex]:= aData
   else raise EListError.Create(Format(SListIndexError, [aIndex]));
 end;
 
-function TOpenArray.Get(const aIndex: DWord; out aData: T): Boolean;
+function TOpenArray<T>.Get(const aIndex: DWord; out aData: T): Boolean;
 begin
   aData:= Default(T);
   try
@@ -154,7 +189,7 @@ begin
   end;
 end;
 
-function TOpenArray.Put(const aIndex: DWord; const aData: T): Boolean;
+function TOpenArray<T>.Put(const aIndex: DWord; const aData: T): Boolean;
 begin
   try
      PutByIndex(aIndex, aData);
@@ -164,36 +199,36 @@ begin
   end;
 end;
 
-function TOpenArray.GetCount: DWord; stdcall;
+function TOpenArray<T>.GetCount: DWord; stdcall;
 begin
   Result:= Length(rList);
 end;
 
-function TOpenArray.FreeElement(var aData: T): Boolean;
+function TOpenArray<T>.FreeElement(var aData: T): Boolean;
 begin
   Result:= True;
 end;
 
-function TOpenArray.CompData(aData1, aData2: T): Integer;
+function TOpenArray<T>.CompData(aData1, aData2: T): Integer;
 begin
   Result:= -1;
 end;
 
-constructor TOpenArray.Create;
+constructor TOpenArray<T>.Create;
 begin
   inherited Create;
 
   rList:= Nil;
 end;
 
-destructor TOpenArray.Destroy;
+destructor TOpenArray<T>.Destroy;
 begin
   Clear;
 
   inherited Destroy;
 end;
 
-function TOpenArray.Add(const aData: T): DWord;
+function TOpenArray<T>.Add(const aData: T): DWord;
 begin
   Result:= Length(rList);
   SetLength(rList, Result+1);
@@ -201,7 +236,7 @@ begin
   rList[Result]:= aData;
 end;
 
-function TOpenArray.Add(const ACount: DWord; const ADataArray: array of T): Boolean;
+function TOpenArray<T>.Add(const ACount: DWord; const ADataArray: array of T): Boolean;
 var
    i: Integer;
 
@@ -217,12 +252,12 @@ begin
   end;
 end;
 
-function TOpenArray.CopyFrom(const ACount: DWord; const ADataArray: array of T): Boolean;
+function TOpenArray<T>.CopyFrom(const ACount: DWord; const ADataArray: array of T): Boolean;
 begin
   Result:= Clear and Add(ACount, ADataArray);
 end;
 
-function TOpenArray.Del(const aData: T): Boolean;
+function TOpenArray<T>.Del(const aData: T): Boolean;
 var
    r : Integer;
 
@@ -239,7 +274,7 @@ begin
   end;
 end;
 
-function TOpenArray.Del(const aIndex: DWord): Boolean;
+function TOpenArray<T>.Del(const aIndex: DWord): Boolean;
 begin
   Result:= False;
   if (aIndex < Length(rList)) then
@@ -251,7 +286,7 @@ begin
   end;
 end;
 
-function TOpenArray.Clear: Boolean;
+function TOpenArray<T>.Clear: Boolean;
 var
    i: Integer;
 
@@ -275,7 +310,7 @@ begin
   end;
 end;
 
-function TOpenArray.Find(const aData: T): Integer;
+function TOpenArray<T>.Find(const aData: T): Integer;
 var
   i: Integer;
 
@@ -290,7 +325,25 @@ end;
 
 { TOpenArrayList }
 
-function TOpenArrayList.Get(const aKey: K): PData;
+function TOpenArrayList<T, K>.GetSelected: T;
+begin
+  if (rSelectedIndex >= 0) and (rSelectedIndex < Length(rList))
+  then Result:= rList[rSelectedIndex].Data
+  else Result:= Default(T);
+end;
+
+procedure TOpenArrayList<T, K>.SetSelectedIndex(AValue: Integer);
+begin
+  if (AValue <> rSelectedIndex) and
+     (AValue >= 0) and (AValue < Length(rList)) then
+  begin
+    if (rList[AValue].Data <> Default(T))
+    then rSelectedIndex:= AValue
+    else rSelectedIndex:= -1;
+  end;
+end;
+
+function TOpenArrayList<T, K>.Get(const aKey: K): PData;
 var
    r : Integer;
 
@@ -302,14 +355,14 @@ begin
   then Result:= @rList[r].Data;
 end;
 
-function TOpenArrayList.GetByIndex(Index: DWord): PData;
+function TOpenArrayList<T, K>.GetByIndex(const Index: DWord): PData;
 begin
   if (Index < Length(rList))
   then Result:= @rList[Index].Data
   else raise EListError.Create(Format(SListIndexError, [Index]));
 end;
 
-function TOpenArrayList.Get(const aIndex: DWord; out aData: T): Boolean;
+function TOpenArrayList<T, K>.Get(const aIndex: DWord; out aData: T): Boolean;
 var
    resData: PData;
 
@@ -325,14 +378,14 @@ begin
   end;
 end;
 
-function TOpenArrayList.GetKey(Index: DWord): K;
+function TOpenArrayList<T, K>.GetKey(const Index: DWord): K;
 begin
   if (Index < Length(rList))
   then Result:= rList[Index].Key
   else Result:= Default(K);
 end;
 
-function TOpenArrayList.GetByKey(const aKey: K; out aData: T): Boolean;
+function TOpenArrayList<T, K>.GetByKey(const aKey: K; out aData: T): Boolean;
 var
    resData: PData;
 
@@ -348,36 +401,36 @@ begin
   end;
 end;
 
-function TOpenArrayList.GetCount: DWord; stdcall;
+function TOpenArrayList<T, K>.GetCount: DWord; stdcall;
 begin
   Result:= Length(rList);
 end;
 
-function TOpenArrayList.FreeElement(var aData: T): Boolean;
+function TOpenArrayList<T, K>.FreeElement(var aData: T): Boolean;
 begin
   Result:= True;
 end;
 
-function TOpenArrayList.CompData(aData1, aData2: T): Integer;
+function TOpenArrayList<T, K>.CompData(aData1, aData2: T): Integer;
 begin
   Result:= -1;
 end;
 
-constructor TOpenArrayList.Create;
+constructor TOpenArrayList<T, K>.Create;
 begin
   inherited Create;
 
   rList:= Nil;
 end;
 
-destructor TOpenArrayList.Destroy;
+destructor TOpenArrayList<T, K>.Destroy;
 begin
   Clear;
 
   inherited Destroy;
 end;
 
-function TOpenArrayList.Add(const aKey: K; const aData: T): Integer;
+function TOpenArrayList<T, K>.Add(const aKey: K; const aData: T): Integer;
 begin
   Result:= FindByKey(aKey);
 
@@ -391,7 +444,7 @@ begin
   end;
 end;
 
-function TOpenArrayList.Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean;
+function TOpenArrayList<T, K>.Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean;
 var
    i: Integer;
 
@@ -407,12 +460,12 @@ begin
   end;
 end;
 
-function TOpenArrayList.CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean;
+function TOpenArrayList<T, K>.CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean;
 begin
   Result:= Clear and Add(ACount, AKeyArray, ADataArray);
 end;
 
-function TOpenArrayList.Del(const aKey: K): Boolean;
+function TOpenArrayList<T, K>.Del(const aKey: K): Boolean;
 var
    r : Integer;
 
@@ -429,7 +482,7 @@ begin
   end;
 end;
 
-function TOpenArrayList.Del(const aData: T): Boolean;
+function TOpenArrayList<T, K>.Del(const aData: T): Boolean;
 var
    r : Integer;
 
@@ -446,7 +499,7 @@ begin
   end;
 end;
 
-function TOpenArrayList.Del(const aIndex: DWord): Boolean;
+function TOpenArrayList<T, K>.Del(const aIndex: DWord): Boolean;
 begin
   Result:= False;
   if (aIndex < Length(rList)) then
@@ -458,7 +511,7 @@ begin
   end;
 end;
 
-function TOpenArrayList.Clear: Boolean;
+function TOpenArrayList<T, K>.Clear: Boolean;
 var
    i: Integer;
 
@@ -482,7 +535,7 @@ begin
   end;
 end;
 
-function TOpenArrayList.FindByKey(const aKey: K): Integer;
+function TOpenArrayList<T, K>.FindByKey(const aKey: K): Integer;
 var
   i: Integer;
 
@@ -495,7 +548,7 @@ begin
     end;
 end;
 
-function TOpenArrayList.Find(const aData: T): Integer;
+function TOpenArrayList<T, K>.Find(const aData: T): Integer;
 var
   i: Integer;
 
