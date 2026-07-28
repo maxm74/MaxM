@@ -38,7 +38,8 @@ type
     function Del(const aData: T): Boolean; overload; virtual;
     function Del(const aIndex: DWord): Boolean; overload; virtual;
 
-    function Clear: Boolean; virtual;
+    function Clear: Boolean; overload; virtual;
+    function Clear(PreserveSelected: Boolean): Boolean; overload; virtual;
 
     function Find(const aData: T): Integer; virtual;
 
@@ -106,7 +107,8 @@ type
     function Del(const aData: T): Boolean; overload; virtual;
     function Del(const aIndex: DWord): Boolean; overload; virtual;
 
-    function Clear: Boolean; virtual;
+    function Clear: Boolean; overload; virtual;
+    function Clear(PreserveSelected: Boolean): Boolean; overload; virtual;
 
     function FindByKey(const aKey: K): Integer; virtual;
     function Find(const aData: T): Integer; virtual;
@@ -293,8 +295,37 @@ var
 begin
   Result:= True;
 
+  rSelectedIndex:= -1;
+
   for i:=0 to Length(rList)-1 do
   begin
+    try
+       FreeElement(rList[i]);
+
+    except
+      Result:= False;
+    end;
+  end;
+
+  try
+     rList:= Nil;
+  except
+    Result:= False;
+  end;
+end;
+
+function TOpenArray<T>.Clear(PreserveSelected: Boolean): Boolean;
+var
+   i: Integer;
+
+begin
+  Result:= True;
+
+  rSelectedIndex:= -1;
+
+  for i:=0 to Length(rList)-1 do
+  begin
+    if not(PreserveSelected and (i = rSelectedIndex)) then
     try
        FreeElement(rList[i]);
 
@@ -518,8 +549,37 @@ var
 begin
   Result:= True;
 
+  rSelectedIndex:= -1;
+
   for i:=0 to Length(rList)-1 do
   begin
+    try
+       FreeElement(rList[i].Data);
+
+    except
+      Result:= False;
+    end;
+  end;
+
+  try
+     rList:= Nil;
+  except
+    Result:= False;
+  end;
+end;
+
+function TOpenArrayList<T, K>.Clear(PreserveSelected: Boolean): Boolean;
+var
+   i: Integer;
+
+begin
+  Result:= True;
+
+  rSelectedIndex:= -1;
+
+  for i:=0 to Length(rList)-1 do
+  begin
+    if not(PreserveSelected and (i = rSelectedIndex)) then
     try
        FreeElement(rList[i].Data);
 
