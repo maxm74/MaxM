@@ -13,11 +13,14 @@ uses
 type
    { TOpenArray }
   TOpenArray<T> = class(TNoRefCountObject)
+  type
+    PData = ^T;
+
   protected
     rList: array of T;
     rSelectedIndex: Integer;
 
-    function GetSelected: T;
+    function GetSelected: PData;
     procedure SetSelectedIndex(AValue: Integer);
 
     function GetByIndex(const aIndex: DWord) : T; virtual;
@@ -30,41 +33,50 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Add(const aData: T): DWord; overload; virtual;
-    function Add(const ACount: DWord; const ADataArray: array of T): Boolean; overload; virtual;
+    function Add(const aData: T): DWord; overload; virtual; stdcall;
+    function Add(const ACount: DWord; const ADataArray: array of T): Boolean; overload; virtual; stdcall;
+    function Add(const aIndex: DWord; const aData: T): Boolean; overload; virtual; stdcall;
 
     function CopyFrom(const ACount: DWord; const ADataArray: array of T): Boolean; virtual;
 
-    function Del(const aData: T): Boolean; overload; virtual;
-    function Del(const aIndex: DWord): Boolean; overload; virtual;
+    function Del(const aData: T): Boolean; overload; virtual; stdcall;
+    function Del(const aIndex: DWord): Boolean; overload; virtual; stdcall;
 
-    function Clear: Boolean; overload; virtual;
-    function Clear(PreserveSelected: Boolean): Boolean; overload; virtual;
+    function Clear: Boolean; overload; virtual; stdcall;
+    function Clear(PreserveSelected: Boolean): Boolean; overload; virtual; stdcall;
 
-    function Find(const aData: T): Integer; virtual;
+    function Find(const aData: T): Integer; virtual; stdcall;
 
     function GetCount: DWord; virtual; stdcall;
-    function Get(const aIndex: DWord; out aData: T): Boolean; overload; virtual;
-    function Put(const aIndex: DWord; const aData: T): Boolean; overload; virtual;
+    function Get(const aIndex: DWord; out aData: T): Boolean; overload; virtual; stdcall;
 
     property Count: DWord read GetCount;
 
     property Data[const aIndex: DWord]: T read GetByIndex write PutByIndex; default;
 
     property SelectedIndex: Integer read rSelectedIndex write SetSelectedIndex;
-    property Selected: T read GetSelected;
+    property Selected: PData read GetSelected;
   end;
 
   IOpenArrayR<T> = interface
+    function Find(const aData: T): Integer; stdcall;
+
     function GetCount: DWord; stdcall;
     function Get(const AIndex: DWord; out aData: T): Boolean; stdcall;
   end;
 
   IOpenArrayW<T> = interface
-    function Add(const aData: T): DWord;  stdcall;
-    function Put(const AIndex: DWord; var aData: T): Boolean; stdcall;
-    function CopyFrom(const ACount: DWord; const AArray: array of T): Boolean; stdcall;
-    function Del(const aData: T): Boolean; stdcall;
+    function Add(const aData: T): DWord; overload; stdcall;
+    function Add(const ACount: DWord; const ADataArray: array of T): Boolean; overload; stdcall;
+    function Add(const aIndex: DWord; const aData: T): Boolean; overload; stdcall;
+
+    function CopyFrom(const ACount: DWord; const ADataArray: array of T): Boolean; stdcall;
+
+    function Del(const aData: T): Boolean; overload; stdcall;
+    function Del(const aIndex: DWord): Boolean; overload; stdcall;
+
+    function Clear: Boolean; overload; stdcall;
+    function Clear(PreserveSelected: Boolean): Boolean; overload; stdcall;
   end;
 
   TOpenArrayString = class(TOpenArray<String>);
@@ -84,7 +96,7 @@ type
     rList: array of TInfo;
     rSelectedIndex: Integer;
 
-    function GetSelected: T;
+    function GetSelected: PData;
     procedure SetSelectedIndex(AValue: Integer);
 
     function Get(const aKey: K) : PData; overload; virtual;
@@ -98,24 +110,24 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    function Add(const aKey: K; const aData: T): Integer; overload; virtual;
-    function Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; overload; virtual;
+    function Add(const aKey: K; const aData: T): Integer; overload; virtual; stdcall;
+    function Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; overload; virtual; stdcall;
 
-    function CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; virtual;
+    function CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; virtual; stdcall;
 
-    function Del(const aKey: K): Boolean; overload; virtual;
-    function Del(const aData: T): Boolean; overload; virtual;
-    function Del(const aIndex: DWord): Boolean; overload; virtual;
+    function Del(const aKey: K): Boolean; overload; virtual; stdcall;
+    function Del(const aData: T): Boolean; overload; virtual; stdcall;
+    function Del(const aIndex: DWord): Boolean; overload; virtual; stdcall;
 
-    function Clear: Boolean; overload; virtual;
-    function Clear(PreserveSelected: Boolean): Boolean; overload; virtual;
+    function Clear: Boolean; overload; virtual; stdcall;
+    function Clear(PreserveSelected: Boolean): Boolean; overload; virtual; stdcall;
 
-    function FindByKey(const aKey: K): Integer; virtual;
-    function Find(const aData: T): Integer; virtual;
+    function FindByKey(const aKey: K): Integer; virtual; stdcall;
+    function Find(const aData: T): Integer; virtual; stdcall;
 
     function GetCount: DWord; virtual; stdcall;
-    function Get(const aIndex: DWord; out aData: T): Boolean; overload; virtual;
-    function GetByKey(const aKey: K; out aData: T): Boolean; virtual;
+    function Get(const aIndex: DWord; out aData: T): Boolean; overload; virtual; stdcall;
+    function Get(const aKey: K; out aData: T): Boolean; overload; virtual; stdcall;
 
     property Count: DWord read GetCount;
 
@@ -124,19 +136,30 @@ type
     property Key[const aIndex: DWord]: K read GetKey;
 
     property SelectedIndex: Integer read rSelectedIndex write SetSelectedIndex;
-    property Selected: T read GetSelected;
+    property Selected: PData read GetSelected;
   end;
 
   IOpenArrayListR<T, K> = interface
+    function FindByKey(const aKey: K): Integer; stdcall;
+    function Find(const aData: T): Integer; stdcall;
+
     function GetCount: DWord; stdcall;
-    function Get(const AIndex: DWord; out aData: T): Boolean; stdcall;
-    function GetByKey(const aKey: K; out aData: T): Boolean; stdcall;
+    function Get(const AIndex: DWord; out aData: T): Boolean; overload; stdcall;
+    function Get(const aKey: K; out aData: T): Boolean; overload; stdcall;
   end;
 
   IOpenArrayListW<T, K> = interface
-    function Put(const AIndex: DWord; var aData: T): Boolean; stdcall;
-    function PutByKey(const aKey: K; var aData: T): Boolean; stdcall;
-    function CopyFrom(const ACount: DWord; const AArray: array of T): Boolean; stdcall;
+    function Add(const aKey: K; const aData: T): Integer; overload; stdcall;
+    function Add(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; overload; stdcall;
+
+    function CopyFrom(const ACount: DWord; const AKeyArray: array of K; const ADataArray: array of T): Boolean; stdcall;
+
+    function Del(const aKey: K): Boolean; overload; stdcall;
+    function Del(const aData: T): Boolean; overload; stdcall;
+    function Del(const aIndex: DWord): Boolean; overload; stdcall;
+
+    function Clear: Boolean; overload; stdcall;
+    function Clear(PreserveSelected: Boolean): Boolean; overload; stdcall;
   end;
 
   TKeyString = type String;
@@ -148,22 +171,19 @@ uses SysConst;
 
 { TOpenArray }
 
-function TOpenArray<T>.GetSelected: T;
+function TOpenArray<T>.GetSelected: PData;
 begin
   if (rSelectedIndex >= 0) and (rSelectedIndex < Length(rList))
-  then Result:= rList[rSelectedIndex]
-  else Result:= Default(T);
+  then Result:= @rList[rSelectedIndex] //if T was a pointer or a class it could return the pointer itself or the class, is there a way?
+  else Result:= nil;
 end;
 
 procedure TOpenArray<T>.SetSelectedIndex(AValue: Integer);
 begin
-  if (AValue <> rSelectedIndex) and
-     (AValue >= 0) and (AValue < Length(rList)) then
-  begin
-    if (rList[AValue] <> Default(T))
+  if (AValue <> rSelectedIndex) then
+    if (AValue >= 0) and (AValue < Length(rList))
     then rSelectedIndex:= AValue
-    else rSelectedIndex:= -1;
-  end;
+    else rSelectedIndex:= -1
 end;
 
 function TOpenArray<T>.GetByIndex(const aIndex: DWord): T;
@@ -191,7 +211,7 @@ begin
   end;
 end;
 
-function TOpenArray<T>.Put(const aIndex: DWord; const aData: T): Boolean;
+function TOpenArray<T>.Add(const aIndex: DWord; const aData: T): Boolean;
 begin
   try
      PutByIndex(aIndex, aData);
@@ -356,22 +376,19 @@ end;
 
 { TOpenArrayList }
 
-function TOpenArrayList<T, K>.GetSelected: T;
+function TOpenArrayList<T, K>.GetSelected: PData;
 begin
   if (rSelectedIndex >= 0) and (rSelectedIndex < Length(rList))
-  then Result:= rList[rSelectedIndex].Data
-  else Result:= Default(T);
+  then Result:= @rList[rSelectedIndex].Data //if T was a pointer or a class it could return the pointer itself or the class, is there a way?
+  else Result:= nil;
 end;
 
 procedure TOpenArrayList<T, K>.SetSelectedIndex(AValue: Integer);
 begin
-  if (AValue <> rSelectedIndex) and
-     (AValue >= 0) and (AValue < Length(rList)) then
-  begin
-    if (rList[AValue].Data <> Default(T))
+  if (AValue <> rSelectedIndex) then
+    if (AValue >= 0) and (AValue < Length(rList))
     then rSelectedIndex:= AValue
-    else rSelectedIndex:= -1;
-  end;
+    else rSelectedIndex:= -1
 end;
 
 function TOpenArrayList<T, K>.Get(const aKey: K): PData;
@@ -416,7 +433,7 @@ begin
   else Result:= Default(K);
 end;
 
-function TOpenArrayList<T, K>.GetByKey(const aKey: K; out aData: T): Boolean;
+function TOpenArrayList<T, K>.Get(const aKey: K; out aData: T): Boolean;
 var
    resData: PData;
 
