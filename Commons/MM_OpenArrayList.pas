@@ -133,6 +133,7 @@ type
 
     function GetCount: DWord; virtual; stdcall;
     function Get(const aIndex: DWord; out aData: T): Boolean; overload; virtual; stdcall;
+    function Get(const aIndex: DWord; out aData: T; out aKey: K): Boolean; overload; virtual; stdcall;
     function Get(const aKey: K; out aData: T): Boolean; overload; virtual; stdcall;
 
     function GetSelectedIndex: Integer; virtual; stdcall;
@@ -157,6 +158,7 @@ type
 
     function GetCount: DWord; stdcall;
     function Get(const AIndex: DWord; out aData: T): Boolean; overload; stdcall;
+    function Get(const aIndex: DWord; out aData: T; out aKey: K): Boolean; overload; stdcall;
     function Get(const aKey: K; out aData: T): Boolean; overload; stdcall;
 
     function GetSelectedIndex: Integer; stdcall;
@@ -280,6 +282,7 @@ begin
   inherited Create;
 
   rList:= Nil;
+  rSelectedIndex:= -1;
 end;
 
 destructor TOpenArray<T>.Destroy;
@@ -297,8 +300,7 @@ begin
   rList[Result]:= aData;
 end;
 
-function TOpenArray<T>.Add(const ACount: DWord; const ADataArray: array of T
-  ): Boolean; stdcall;
+function TOpenArray<T>.Add(const ACount: DWord; const ADataArray: array of T): Boolean; stdcall;
 var
    i: Integer;
 
@@ -435,8 +437,7 @@ begin
   else raise EListError.Create(Format(SListIndexError, [Index]));
 end;
 
-function TOpenArrayList<T, K>.Get(const aIndex: DWord; out aData: T): Boolean;
-  stdcall;
+function TOpenArrayList<T, K>.Get(const aIndex: DWord; out aData: T): Boolean; stdcall;
 var
    resData: PData;
 
@@ -449,6 +450,20 @@ begin
 
   except
     Result:= False;
+  end;
+end;
+
+function TOpenArrayList<T, K>.Get(const aIndex: DWord; out aData: T; out aKey: K): Boolean; stdcall;
+begin
+  aData:= Default(T);
+  aKey:= Default(K);
+
+  Result:= (aIndex < Length(rList));
+
+  if Result then
+  begin
+    aData:= rList[aIndex].Data;
+    aKey:= rList[aIndex].Key;
   end;
 end;
 
@@ -546,6 +561,7 @@ begin
   inherited Create;
 
   rList:= Nil;
+  rSelectedIndex:= -1;
 end;
 
 destructor TOpenArrayList<T, K>.Destroy;
