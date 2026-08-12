@@ -274,7 +274,9 @@ end;
 
 function TOpenArray<T>.CompData(aData1, aData2: T): Integer;
 begin
-  Result:= -1;
+  if (aData1 = aData2)
+  then Result:= 0
+  else Result:= -1;
 end;
 
 constructor TOpenArray<T>.Create;
@@ -553,7 +555,9 @@ end;
 
 function TOpenArrayList<T, K>.CompData(aData1, aData2: T): Integer;
 begin
-  Result:= -1;
+  if (aData1 = aData2)
+  then Result:= 0
+  else Result:= -1;
 end;
 
 constructor TOpenArrayList<T, K>.Create;
