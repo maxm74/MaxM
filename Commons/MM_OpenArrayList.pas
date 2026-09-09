@@ -103,7 +103,7 @@ type
     rList: array of TInfo;
     rSelectedIndex: Integer;
 
-    function GetSelected: PData; virtual;
+    function GetSelected: T; virtual;
 
     function Get(const aKey: K) : PData; overload; virtual;
     function GetByIndex(const Index: DWord) : PData; virtual;
@@ -149,7 +149,7 @@ type
     property Key[const aIndex: DWord]: K read GetKey;
 
     property SelectedIndex: Integer read GetSelectedIndex write SetSelectedIndex;
-    property Selected: PData read GetSelected;
+    property Selected: T read GetSelected;
   end;
 
   IOpenArrayListR<T, K> = interface
@@ -493,11 +493,11 @@ begin
   end;
 end;
 
-function TOpenArrayList<T, K>.GetSelected: PData;
+function TOpenArrayList<T, K>.GetSelected: T;
 begin
   if (rSelectedIndex >= 0) and (rSelectedIndex < Length(rList))
-  then Result:= @rList[rSelectedIndex].Data //if T was a pointer or a class it could return the pointer itself or the class, is there a way?
-  else Result:= nil;
+  then Result:= rList[rSelectedIndex].Data
+  else Result:= Default(T);
 end;
 
 function TOpenArrayList<T, K>.GetSelectedIndex: Integer; stdcall;
